@@ -1,0 +1,185 @@
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title HitZone - Music Timeline Game
+        link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.css")
+        link(rel="stylesheet", href="https://cdn.plyr.io/3.7.8/plyr.css")
+        link(rel="stylesheet", href="/css/style.css")
+        script(src="https://code.jquery.com/jquery-3.6.4.min.js")
+        script(src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.js")
+        script(src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js")
+    body
+        .ui.container
+            h1.ui.center.aligned.header.massive HitZone
+            .ui.segment
+                #welcome-screen
+                    .ui.top.attached.tabular.menu
+                        a.item.active(data-tab="rooms") Rooms
+                        a.item(data-tab="add-song") Add Song
+
+                    .ui.bottom.attached.tab.segment.active(data-tab="rooms")
+                        h2.ui.header Join or Create a Room
+                        .ui.two.column.stackable.grid
+                            .column
+                                .ui.segment
+                                    h3.ui.header Create Room
+                                    .ui.form
+                                        .field
+                                            label Username
+                                            input#create-username(type="text", placeholder="Enter your username")
+                                        button#create-room-btn.ui.primary.button Create Room
+
+                            .column
+                                .ui.segment
+                                    h3.ui.header Join Room
+                                    .ui.form
+                                        .field
+                                            label Room ID
+                                            input#join-room-id(type="text", placeholder="Enter room ID")
+                                        .field
+                                            label Username
+                                            input#join-username(type="text", placeholder="Enter your username")
+                                        button#join-room-btn.ui.primary.button Join Room
+
+                    .ui.bottom.attached.tab.segment(data-tab="add-song")
+                        h2.ui.header Add New Song
+                        .ui.form#add-song-form
+                            .field
+                                label Song Name
+                                input(type="text", name="name", placeholder="Enter song name", required)
+                            .field
+                                label Artist
+                                input(type="text", name="artist", placeholder="Enter artist name", required)
+                            .field
+                                label Release Year
+                                input(type="number", name="release_year", placeholder="Enter release year", required, min="1900", max="2024")
+                            .field
+                                label Album
+                                input(type="text", name="album", placeholder="Enter album name")
+                            .field
+                                label YouTube Link or MP3 URL
+                                input(type="text", name="link_or_file", placeholder="Enter YouTube link or MP3 URL", required)
+                            .ui.message.hidden#song-message
+                            button.ui.primary.button#add-song-btn Add Song
+
+                #game-room.ui.hidden
+                    .ui.grid
+                        .four.wide.column
+                            .ui.segment
+                                h3.ui.header Players
+                                .ui.list#players-list
+                                #host-controls.ui.hidden.room-admin-panel
+                                    .ui.divider
+                                    h4.ui.header Game Settings
+                                    .ui.form
+                                        .field
+                                            label Cards to Win
+                                            select#cards-to-win.ui.dropdown
+                                                option(value="5") 5 Cards
+                                                option(value="7") 7 Cards
+                                                option(value="10") 10 Cards
+                                        button#start-game-btn.ui.primary.button Start Game
+                                        button#kick-player-btn.ui.button.red.disabled Kick Player
+                                    .validation-queue.hidden
+                                        h5 Pending Validations: 
+                                            span#pending-count 0
+                                        #validation-list.ui.list
+
+                        .twelve.wide.column
+                            #waiting-screen.ui.segment
+                                h2.ui.center.aligned.header Waiting for players...
+                                .ui.center.aligned
+                                    .ui.label.large Room ID: 
+                                        span#room-id-display
+
+                            #game-screen.ui.hidden
+                                .ui.segment.game-main
+                                    .player-area
+                                        h3.ui.header Your Timeline
+                                        .my-timeline#timeline.ui.cards
+                                        h3.ui.header Other Players' Timelines
+                                        #other-players-timelines.ui.segments
+                                        .controls
+                                            span.coins 🪙: 
+                                                span#coin-count 2
+                                            button#buy-card-btn.ui.button.green.disabled Buy Card (3🪙)
+                                            button#steal-card-btn.ui.button.blue.disabled Steal Card (4🪙)
+                                    
+                                    .current-turn
+                                        #turn-status.ui.message
+                                            .ui.grid
+                                                .eight.wide.column
+                                                    h4 Current Turn: 
+                                                        span#current-player
+                                                .eight.wide.column.right.aligned
+                                                    h4 Time Left: 
+                                                        span#turn-timer 60s
+                                        
+                                        #turn-actions.hidden
+                                            .ui.segment
+                                                h3.ui.header Available Cards
+                                                #card-grid.ui.cards
+                                            
+                                            #card-preview.ui.segment.hidden
+                                                h4.ui.header Selected Card
+                                                .ui.card.preview-card
+                                                    .content
+                                                        .header#preview-name
+                                                        .meta#preview-artist
+                                                        .description
+                                                            p#preview-album
+                                                .plyr__video-embed#player
+                                                    iframe(src="", allow="autoplay; fullscreen; picture-in-picture", allowfullscreen)
+                                                .placement-options
+                                                    button.ui.button.blue#place-before Place Before
+                                                    #intermediate-positions.ui.buttons
+                                                    button.ui.button.blue#place-after Place After
+                                                    button.ui.button.yellow#bet-coin-btn Guess Song (1🪙)
+
+                                .ui.modal.bet-modal
+                                    .header Guess Artist/Song (1🪙)
+                                    .content
+                                        .ui.form
+                                            .field
+                                                label Artist
+                                                input#guess-artist(type="text", placeholder="Enter artist name")
+                                            .field
+                                                label Song
+                                                input#guess-song(type="text", placeholder="Enter song name")
+                                    .actions
+                                        .ui.button.cancel Cancel
+                                        .ui.primary.button#submit-guess Submit
+
+                                .ui.modal.admin-validation
+                                    .header Validate Guess
+                                    .content#validation-content
+                                    .actions
+                                        .ui.red.button.reject-guess ❌ Incorrect
+                                        .ui.green.button.approve-guess ✅ Correct
+
+                                .ui.modal.game-over
+                                    .header Game Over
+                                    .content
+                                        h3.ui.header Final Scores
+                                        .ui.divided.list#final-scores
+                                    .actions
+                                        .ui.primary.button#play-again Play Again
+                                        .ui.button.close Exit
+
+                                .ui.modal.sudden-death
+                                    .header Sudden Death!
+                                    .content
+                                        p Multiple players have completed their timeline!
+                                        p.ui.header The game continues with:
+                                        ul
+                                            li Only base cards remain
+                                            li First to complete 
+                                                span#new-target-cards
+                                                |  cards wins
+                                    .actions
+                                        .ui.primary.button.close Continue
+
+        script(src="/socket.io/socket.io.js")
+        script(src="/js/main.js", type="module")

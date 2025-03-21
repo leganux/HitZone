@@ -1,0 +1,136 @@
+Vas a crear un juego WEB con Socket-IO y express que permita jugar un juego Hitster Like
+
+Las intrucciones del juego original son
+
+Objetivo: Ser el jugador con la mejor línea de tiempo musical, colocando correctamente las canciones en orden cronológico.
+
+Preparación:
+	1.	Cada jugador recibe un soporte para cartas (o simplemente hace su línea en la mesa).
+	2.	Se baraja el mazo de canciones y se coloca en el centro.
+	3.	Se elige quién comienza.
+
+Cómo jugar:
+	1.	Roba una carta de canción 🎶 y escanéala con la app de Hitster (o usa un servicio de música).
+	2.	Escucha la canción y decide en qué año crees que fue lanzada.
+	3.	Coloca la carta en tu línea de tiempo (antes o después de las canciones que ya tienes).
+	4.	Revela el año: Si la colocaste correctamente en orden cronológico, te quedas con la carta. Si no, la carta se descarta.
+	5.	Turno del siguiente jugador.
+
+Cómo ganar:
+	•	El primer jugador en conseguir 10 canciones correctas en su línea de tiempo gana.
+
+🎧 ¡Disfruta descubriendo música y poniendo a prueba tu memoria musical! 🎶
+
+
+ahora lo que vas a hacer
+
+Crea un nuevo proyecto en nodejs con express, mongodb, y socket.IO, para las vistas usa PUG(jade) fomanticui y jquery
+
+Primero crea una API para registrar y dar de alta las canciones CRUD 
+
+{
+    name: nombre de la cancion string,
+    release_year:Año en que se publico (numerico obligatorio)
+    artist: nombre del artista string
+    album: nombre del album 
+    link_or_file: guardara la URL de youtube o la url de la cancion en mp3
+}
+
+
+El usuario va a entrar a la pagina de inicio y tendra 2 opciones crear un room, o un imput para unrse a un room 
+una vez dentro del room vera a los usuarios maximo podran ser 20 por room
+
+El adminstrador del room podra seleccionar cuantas tarjetas debaran ordenarse para ganar, 5, 7 o 10, y comenzara la partida 
+Al comenzar la partida cada usuario obtendra una tarjeta base (cancion) diferente de forma aleatoria desde la base de datos desde la cual comenzara su linea del tiempo, y 2 monedas virtuales
+
+En el turno del jugador se mostrara visulamente una seccion con 50 cartas que seran clickeables y el usuario seleccionara una lo que hara que traiga de la base de datos una carta al azar, sin mportar en realidad la que seleccione
+El usuario podra colocarla antes, no se revelara el año, ni el nombre del artista, solo se empezara a reproducir el MP3 o la URL de youtube en segundo plano para que el usuario adivine la posicion de esa nueva carta,  despues o al final de la carta  en medio o cartas 
+
+Si el usuario coloca su carta  de forma correcta de acuerdo al orden de los años  la carta se queda dentro de su linea de tiempo. de lo contrario pierde la carta.
+
+Si antes de corroborar y revelar el año el usuario apuesta una de sus monedas  para adivinar el artista, y nombre de la cancion y acierta obtendra una moneda pero si no acierta perdera la carta y la moneda. Quien decide si le atino a la cancion es l host y es quien tiene la capacidad de retirar o agregar la carta y/o el dinero
+
+Si el usuario junta 4 monedas podra comprar con 3 de ellas una nueva carta y volver a tirar en su turno o robar la carta de alguno de los turnos sigueites
+
+Al final quien junte la linea completa primero gana. Si en la ultima ronda mas de un usuario  obtuvo todas las cartas el juego continua en uerte subita hasta definir un ganador 
+
+
+Vas a crear un juego WEB con Socket-IO y express que permita jugar un juego Hitster Like
+
+Las intrucciones del juego original son
+
+Objetivo: Ser el jugador con la mejor línea de tiempo musical, colocando correctamente las canciones en orden cronológico.
+
+Preparación:
+	1.	Cada jugador recibe un soporte para cartas (o simplemente hace su línea en la mesa).
+	2.	Se baraja el mazo de canciones y se coloca en el centro.
+	3.	Se elige quién comienza.
+
+Cómo jugar:
+	1.	Roba una carta de canción 🎶 y escanéala con la app de Hitster (o usa un servicio de música).
+	2.	Escucha la canción y decide en qué año crees que fue lanzada.
+	3.	Coloca la carta en tu línea de tiempo (antes o después de las canciones que ya tienes).
+	4.	Revela el año: Si la colocaste correctamente en orden cronológico, te quedas con la carta. Si no, la carta se descarta.
+	5.	Turno del siguiente jugador.
+
+Cómo ganar:
+	•	El primer jugador en conseguir 10 canciones correctas en su línea de tiempo gana.
+
+🎧 ¡Disfruta descubriendo música y poniendo a prueba tu memoria musical! 🎶
+
+
+ahora lo que vas a hacer
+
+Crea un nuevo proyecto en nodejs con express, mongodb, y socket.IO, para las vistas usa PUG(jade) fomanticui y jquery
+
+Primero crea una API para registrar y dar de alta las canciones CRUD 
+
+{
+    name: nombre de la cancion string,
+    release_year:Año en que se publico (numerico obligatorio)
+    artist: nombre del artista string
+    album: nombre del album 
+    link_or_file: guardara la URL de youtube o la url de la cancion en mp3
+}
+
+
+El usuario va a entrar a la pagina de inicio y tendra 2 opciones crear un room, o un imput para unrse a un room 
+una vez dentro del room vera a los usuarios maximo podran ser 20 por room
+
+El adminstrador del room podra seleccionar cuantas tarjetas debaran ordenarse para ganar, 5, 7 o 10, y comenzara la partida 
+Al comenzar la partida cada usuario obtendra una tarjeta base (cancion) diferente de forma aleatoria desde la base de datos desde la cual comenzara su linea del tiempo, y 2 monedas virtuales
+
+En el turno del jugador se mostrara visulamente una seccion con 50 cartas que seran clickeables y el usuario seleccionara una lo que hara que traiga de la base de datos una carta al azar, sin mportar en realidad la que seleccione
+El usuario podra colocarla antes, no se revelara el año, ni el nombre del artista, solo se empezara a reproducir el MP3 o la URL de youtube en segundo plano para que el usuario adivine la posicion de esa nueva carta,  despues o al final de la carta  en medio o cartas 
+
+Si el usuario coloca su carta  de forma correcta de acuerdo al orden de los años  la carta se queda dentro de su linea de tiempo. de lo contrario pierde la carta.
+
+Si antes de corroborar y revelar el año el usuario apuesta una de sus monedas  para adivinar el artista, y nombre de la cancion y acierta obtendra una moneda pero si no acierta perdera la carta y la moneda. Quien decide si le atino a la cancion es l host y es quien tiene la capacidad de retirar o agregar la carta y/o el dinero
+
+Si el usuario junta 4 monedas podra comprar con 3 de ellas una nueva carta y volver a tirar en su turno o robar la carta de alguno de los turnos sigueites
+
+Al final quien junte la linea completa primero gana. Si en la ultima ronda mas de un usuario  obtuvo todas las cartas el juego continua en uerte subita hasta definir un ganador 
+
+
+
+
+Cuando solo hay una carta en el timeline  por ejemplo  
+
+    [ 1983 - Culture club- KArma camaleon]
+
+deben de aparecer los botones de  after y before
+
+   [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton after]
+
+ Pero si hay mas de una carta  por ejemplo  2   debe haber botones intermedios para que la linea del tiempo quede en orden 
+
+    [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton AQUI]  [ 2000 - Britner spears - toxic] [Bonton after]
+
+Si la carta es del mismo año no importa si se pone antes o despues de la tarjeta que le corresponde	
+  
+Cancion sonando  backstreetboys - 2000- everybody
+
+    [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton AQUI]  [ 2000 - Britner spears - toxic] [Bonton after]
+	[Bonton before]  [ 1983 - Culture club- KArma camaleon] [Es correcto aqui]  [ 2000 - Britner spears - toxic] [Es correcto aqui]
+
+Cuando esta sonando una cancion porque el usuario ya escigio una carta el resto de las cartas se deben bloquear  hasta el sigueinte turno
