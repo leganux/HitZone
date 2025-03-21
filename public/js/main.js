@@ -98,7 +98,14 @@ $('#add-song-form').on('submit', function(e) {
 document.getElementById('create-room-btn').addEventListener('click', async () => {
     const username = document.getElementById('create-username').value.trim();
     if (!username) {
-        alert('Please enter a username');
+        await Swal.fire({
+            title: 'Missing Username',
+            text: 'Please enter a username',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+            background: '#ffc107',
+            color: '#000000'
+        });
         return;
     }
 
@@ -117,7 +124,14 @@ document.getElementById('create-room-btn').addEventListener('click', async () =>
             joinGameRoom(room.roomId, username);
         }
     } catch (error) {
-        alert('Error creating room: ' + error.message);
+        await Swal.fire({
+            title: 'Error',
+            text: 'Error creating room: ' + error.message,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            background: '#dc3545',
+            color: '#ffffff'
+        });
     }
 });
 
@@ -127,7 +141,14 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
     const username = document.getElementById('join-username').value.trim();
     
     if (!roomId || !username) {
-        alert('Please enter both room ID and username');
+        await Swal.fire({
+            title: 'Missing Information',
+            text: 'Please enter both room ID and username',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+            background: '#ffc107',
+            color: '#000000'
+        });
         return;
     }
 
@@ -145,7 +166,14 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
             joinGameRoom(roomId, username);
         }
     } catch (error) {
-        alert('Error joining room: ' + error.message);
+        await Swal.fire({
+            title: 'Error',
+            text: 'Error joining room: ' + error.message,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            background: '#dc3545',
+            color: '#ffffff'
+        });
     }
 });
 
@@ -183,7 +211,14 @@ document.getElementById('start-game-btn')?.addEventListener('click', async () =>
             initializeGame(gameState);
         }
     } catch (error) {
-        alert('Error starting game: ' + error.message);
+        await Swal.fire({
+            title: 'Error',
+            text: 'Error starting game: ' + error.message,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            background: '#dc3545',
+            color: '#ffffff'
+        });
     }
 });
 
@@ -302,7 +337,10 @@ function renderCardGrid() {
 
 // Select a card
 function selectCard(index) {
-    if (!isMyTurn || !currentRoom) return;
+    if (!isMyTurn || !currentRoom || currentSong) return;
+    
+    // Lock all cards immediately when one is selected
+    lockCardSlots();
     
     socket.emit('selectCard', { 
         roomId: currentRoom.roomId,
@@ -407,19 +445,65 @@ function updatePlacementButtons() {
     
     const sortedTimeline = sortTimelineByYear(myTimeline);
     
-    if (sortedTimeline.length > 1) {
-        // Add intermediate position buttons
-        for (let i = 0; i < sortedTimeline.length - 1; i++) {
+    // Always show before button for the first card
+    const beforeButton = document.createElement('button');
+    beforeButton.className = 'ui button blue';
+    beforeButton.textContent = sortedTimeline.length > 0 
+        ? `Place before ${sortedTimeline[0].songId.release_year}`
+        : 'Place as first card';
+    beforeButton.onclick = () => confirmPlacement('before');
+    intermediateContainer.appendChild(beforeButton);
+    
+    // Show intermediate buttons for multiple cards
+    if (sortedTimeline.length > 0) {
+        for (let i = 0; i < sortedTimeline.length; i++) {
             const currentCard = sortedTimeline[i];
             const nextCard = sortedTimeline[i + 1];
             
-            const button = document.createElement('button');
-            button.className = 'ui button blue';
-            button.textContent = `Place between ${currentCard.songId.release_year} and ${nextCard.songId.release_year}`;
-            button.onclick = () => confirmPlacement('between', i);
-            intermediateContainer.appendChild(button);
+            // For the last card or when there's a gap in years between cards
+            if (!nextCard || currentCard.songId.release_year < nextCard.songId.release_year) {
+                const afterButton = document.createElement('button');
+                afterButton.className = 'ui button blue';
+                afterButton.textContent = `Place after ${currentCard.songId.release_year}`;
+                afterButton.onclick = () => confirmPlacement('after', i);
+                intermediateContainer.appendChild(afterButton);
+            }
+            
+            // Add between button if there's a next card
+            if (nextCard) {
+                const betweenButton = document.createElement('button');
+                betweenButton.className = 'ui button blue';
+                betweenButton.textContent = `Place between ${currentCard.songId.release_year} and ${nextCard.songId.release_year}`;
+                betweenButton.onclick = () => confirmPlacement('between', i);
+                intermediateContainer.appendChild(betweenButton);
+            }
         }
+    } else {
+        // If no cards, show single button to place first card
+        const firstButton = document.createElement('button');
+        firstButton.className = 'ui button blue';
+        firstButton.textContent = 'Place card';
+        firstButton.onclick = () => confirmPlacement('after');
+        intermediateContainer.appendChild(firstButton);
     }
+}
+
+// Lock all card slots during song playback
+function lockCardSlots() {
+    const cardSlots = document.querySelectorAll('.card-slot');
+    cardSlots.forEach(slot => {
+        slot.classList.add('disabled');
+        slot.style.pointerEvents = 'none';
+    });
+}
+
+// Unlock card slots for next turn
+function unlockCardSlots() {
+    const cardSlots = document.querySelectorAll('.card-slot');
+    cardSlots.forEach(slot => {
+        slot.classList.remove('disabled');
+        slot.style.pointerEvents = 'auto';
+    });
 }
 
 // Confirm card placement
@@ -585,11 +669,27 @@ socket.on('turnStart', ({ playerId, playerName, timeLimit }) => {
     // Reset and start turn timer
     document.getElementById('turn-timer').style.color = '';
     startTurnTimer(timeLimit);
+    
+    // Reset song state and unlock cards at the start of turn
+    currentSong = null;
+    unlockCardSlots();
 });
 
-socket.on('turnTimeout', () => {
+socket.on('turnTimeout', async () => {
     if (isMyTurn) {
-        alert('Time\'s up! Your turn has ended.');
+        try {
+            await Swal.fire({
+                title: 'Time\'s Up!',
+                text: 'Your turn has ended.',
+                icon: 'warning',
+                timer: 2000,
+                showConfirmButton: false,
+                background: '#ffc107',
+                color: '#000000'
+            });
+        } catch (error) {
+            console.error('Error showing alert:', error);
+        }
         document.getElementById('card-preview').classList.add('hidden');
         currentSong = null;
     }
@@ -697,49 +797,58 @@ socket.on('stopPlaying', () => {
     }
 });
 
-socket.on('placementResult', ({ correct, socketId, nextPlayer }) => {
+socket.on('placementResult', async ({ correct, socketId, nextPlayer, song }) => {
     // Update current player display
     document.getElementById('current-player').textContent = 
         nextPlayer.socketId === mySocketId ? 'Your Turn' : `${nextPlayer.username}'s Turn`;
     
-    if (socketId === mySocketId) {
-        if (correct) {
-            // Show the actual song details before adding to timeline
-            document.getElementById('preview-name').textContent = currentSong.name;
-            document.getElementById('preview-artist').textContent = currentSong.artist;
-            document.getElementById('preview-album').textContent = `Album: ${currentSong.album || 'N/A'}`;
-            
-            // Show success feedback after a short delay
-            setTimeout(() => {
+    if (socketId === mySocketId && song) {
+        // Show the actual song details
+        document.getElementById('preview-name').textContent = song.name;
+        document.getElementById('preview-artist').textContent = song.artist;
+        document.getElementById('preview-album').textContent = `Album: ${song.album || 'N/A'}`;
+        
+        // Wait for 1 second to show the song details
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+            if (correct) {
+                // Show success alert
+                await Swal.fire({
+                    title: 'Correct Placement!',
+                    text: `${song.name} by ${song.artist} was placed correctly!`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: '#28a745',
+                    color: '#ffffff'
+                });
+                
                 showConfetti();
+            } else {
+                createErrorSound();
                 
-                // Clear preview and stop playback
-                if (player) {
-                    player.pause();
-                }
-                currentSong = null;
-                document.getElementById('card-preview').classList.add('hidden');
-            }, 2000);
-        } else {
-            // Show the actual song details before discarding
-            document.getElementById('preview-name').textContent = currentSong.name;
-            document.getElementById('preview-artist').textContent = currentSong.artist;
-            document.getElementById('preview-album').textContent = `Album: ${currentSong.album || 'N/A'}`;
-            
-            createErrorSound();
-            
-            // Show error and clear after delay
-            setTimeout(() => {
-                alert('Incorrect placement! The card has been discarded.');
-                
-                // Stop playback and clear preview
-                if (player) {
-                    player.pause();
-                }
-                currentSong = null;
-                document.getElementById('card-preview').classList.add('hidden');
-            }, 2000);
+                // Show error alert
+                await Swal.fire({
+                    title: 'Incorrect Placement!',
+                    text: `${song.name} by ${song.artist} has been discarded.`,
+                    icon: 'error',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: '#dc3545',
+                    color: '#ffffff'
+                });
+            }
+        } catch (error) {
+            console.error('Error showing alert:', error);
         }
+        
+        // Clear preview and stop playback
+        if (player) {
+            player.pause();
+        }
+        currentSong = null;
+        document.getElementById('card-preview').classList.add('hidden');
         
         // Unlock card slots for next turn
         const cardSlots = document.querySelectorAll('.card-slot');

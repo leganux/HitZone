@@ -104,12 +104,30 @@ io.on('connection', (socket) => {
 
             // Validate placement
             let isCorrect = true;
-            const timeline = player.timeline.sort((a, b) => a.position - b.position);
+            const timeline = player.timeline.sort((a, b) => {
+                if (a.position === b.position) {
+                    return a.songId.release_year - b.songId.release_year;
+                }
+                return a.position - b.position;
+            });
             
             if (timeline.length > 0) {
-                const prevSong = timeline.find(t => t.position === position - 1)?.songId;
-                const nextSong = timeline.find(t => t.position === position + 1)?.songId;
-                
+                // Find the cards immediately before and after the placement position
+                const prevSong = timeline.reduce((closest, t) => {
+                    if (t.position < position && (!closest || t.position > closest.position)) {
+                        return t;
+                    }
+                    return closest;
+                }, null)?.songId;
+
+                const nextSong = timeline.reduce((closest, t) => {
+                    if (t.position > position && (!closest || t.position < closest.position)) {
+                        return t;
+                    }
+                    return closest;
+                }, null)?.songId;
+
+                // Validate year order, allowing same-year placements
                 if (prevSong && prevSong.release_year > song.release_year) {
                     isCorrect = false;
                 }
@@ -174,6 +192,7 @@ io.on('connection', (socket) => {
             io.to(roomId).emit('placementResult', { 
                 correct: isCorrect, 
                 socketId: socket.id,
+                song: song,  // Include the song data in the response
                 nextPlayer: {
                     socketId: nextPlayer.socketId,
                     username: nextPlayer.username
