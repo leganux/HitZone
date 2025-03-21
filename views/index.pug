@@ -13,7 +13,12 @@ html(lang="en")
         script(src="https://cdn.jsdelivr.net/npm/sweetalert2@11")
     body
         .ui.container
-            h1.ui.center.aligned.header.massive HitZone
+            .ui.grid.middle.aligned
+                .thirteen.wide.column
+                    h1.ui.header.massive HitZone
+                .three.wide.column.right.aligned
+                    button#theme-toggle.ui.circular.icon.button
+                        i.icon.sun
             .ui.segment
                 #welcome-screen
                     .ui.top.attached.tabular.menu

@@ -1,310 +1,268 @@
-/* General Styles */
-body {
-    padding: 20px;
-    background-color: #f5f5f5;
-}
-
+/* Utility Classes */
 .hidden {
     display: none !important;
 }
 
-/* Game Layout */
-.player-area {
-    margin-bottom: 30px;
+/* Theme Variables */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #6c757d;
+    --accent-primary: #1db954;
+    --accent-secondary: #1ed760;
+    --card-bg: #ffffff;
+    --card-border: rgba(0,0,0,0.1);
+    --timeline-bg: rgba(0,0,0,0.05);
+    --shadow-color: rgba(0,0,0,0.1);
+    --hover-bg: rgba(0,0,0,0.05);
+    --modal-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #e0e0e0;
 }
 
-#other-players-timelines {
-    margin-top: 30px;
+[data-theme="dark"] {
+    --bg-primary: #121212;
+    --bg-secondary: #181818;
+    --bg-tertiary: #282828;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --accent-primary: #1db954;
+    --accent-secondary: #1ed760;
+    --card-bg: #282828;
+    --card-border: rgba(255,255,255,0.1);
+    --timeline-bg: rgba(255,255,255,0.05);
+    --shadow-color: rgba(0,0,0,0.3);
+    --hover-bg: rgba(255,255,255,0.1);
+    --modal-bg: #282828;
+    --input-bg: #404040;
+    --input-border: #404040;
 }
 
-#other-players-timelines .ui.segment {
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-#other-players-timelines .player-timeline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    min-height: 100px;
-    padding: 10px;
-    background: rgba(0,0,0,0.02);
-    border-radius: 4px;
-    margin-top: 10px;
-}
-
-/* Timeline Styles */
-.my-timeline {
-    min-height: 200px;
+/* General Styles */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
     padding: 20px;
-    background: linear-gradient(to right, #f8f9fa, #e9ecef);
-    border: 2px solid #dee2e6;
-    border-radius: 5px;
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    max-height: 400px;
-    overflow-y: auto;
-    margin-bottom: 30px;
 }
 
+.ui.container {
+    margin-top: 2rem;
+}
+
+.ui.header {
+    color: var(--text-primary) !important;
+}
+
+.ui.segment {
+    background: var(--bg-secondary);
+    border-color: var(--card-border);
+    color: var(--text-primary);
+}
+
+/* Theme Toggle */
+#theme-toggle {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--card-border);
+}
+
+/* Cards and Timeline */
 .timeline-card {
-    width: 150px !important;
-    margin: 10px !important;
-    cursor: pointer;
-    position: relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px var(--shadow-color) !important;
     transition: transform 0.3s, box-shadow 0.3s !important;
+    width: 180px !important;
+    margin: 10px !important;
+    overflow: hidden;
+}
+
+.timeline-card .content {
+    background: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    padding: 1rem !important;
+}
+
+.timeline-card .header {
+    color: var(--text-primary) !important;
+    font-size: 1.1em !important;
+    margin-bottom: 0.5em !important;
+}
+
+.timeline-card .meta {
+    color: var(--text-secondary) !important;
 }
 
 .timeline-card:hover {
-    transform: translateY(-8px) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    transform: translateY(-5px) !important;
+    box-shadow: 0 8px 16px var(--shadow-color) !important;
 }
 
 .timeline-card.base {
-    border: 2px solid #ffd700 !important;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3) !important;
+    border: 2px solid var(--accent-primary) !important;
+    box-shadow: 0 0 15px rgba(29, 185, 84, 0.3) !important;
 }
 
 .timeline-card.correct {
-    border: 2px solid #21ba45 !important;
+    border: 2px solid var(--accent-primary) !important;
 }
 
 .timeline-card.incorrect {
     text-decoration: line-through;
-    border: 2px solid #db2828 !important;
+    opacity: 0.7;
+    border: 2px solid #ff4444 !important;
 }
 
-.timeline-card.temporary {
-    opacity: 0.5;
+/* Timeline Area */
+.my-timeline {
+    background: var(--timeline-bg);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 200px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 30px;
+    border: 2px solid var(--card-border);
 }
 
-.timeline-card.locked::after {
-    content: '🔒';
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    font-size: 20px;
-}
-
-/* Card Grid Styles */
+/* Card Grid */
 #card-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    padding: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
 }
 
 .card-slot {
-    width: 100px;
-    height: 150px;
-    background: linear-gradient(135deg, #2185d0, #1678c2);
-    border-radius: 8px;
-    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 12px;
+    height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.3s, box-shadow 0.3s, background 0.3s, opacity 0.3s;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .card-slot:not(.disabled):hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    background: linear-gradient(135deg, #1678c2, #0d5b94);
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px var(--shadow-color);
 }
 
-.card-slot.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
+/* Controls and Buttons */
+.controls {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 20px;
 }
 
-/* Player List Styles */
+.ui.button {
+    border-radius: 20px !important;
+    padding: 12px 24px !important;
+    transition: all 0.3s !important;
+}
+
+.ui.primary.button {
+    background: var(--accent-primary) !important;
+}
+
+.ui.primary.button:hover {
+    background: var(--accent-secondary) !important;
+}
+
+/* Player List */
 #players-list .item {
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 4px;
-    background: #fff;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     transition: background-color 0.3s;
-    border-left: 3px solid transparent;
-}
-
-#players-list .item:hover {
-    background-color: #f8f9fa;
 }
 
 .current-player {
-    background: linear-gradient(to right, #e8f4ff, #f8f9fa) !important;
-    border-left-color: #2185d0 !important;
+    background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary)) !important;
+    color: white !important;
 }
 
-.host-player::before {
-    content: '👑';
-    margin-right: 8px;
+/* Forms and Inputs */
+.ui.form .field label {
+    color: var(--text-primary) !important;
 }
 
-/* Game Controls */
-.controls {
-    margin-top: 20px;
-    padding: 15px;
-    background: #fff;
-    border-radius: 5px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
+.ui.form input, .ui.form select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    color: var(--text-primary) !important;
+    border-radius: 8px !important;
 }
 
-.coins {
-    background: linear-gradient(45deg, #f2c61f, #ffd700);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 1.4em;
-    padding: 5px 10px;
-    border-radius: 4px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-/* Placement Options */
-.placement-options {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-
-#place-before, #place-after {
-    flex: 1;
-    min-width: 120px;
-    max-width: 200px;
-}
-
-#intermediate-positions {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 10px 0;
-}
-
-#intermediate-positions .button {
-    flex: 1;
-    min-width: 200px;
-    white-space: nowrap;
+/* Modals */
+.ui.modal {
+    background: var(--modal-bg) !important;
+    border-radius: 12px !important;
     overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 10px;
-    margin: 5px;
 }
 
-#bet-coin-btn {
-    width: 100%;
-    margin-top: 10px;
+.ui.modal .header {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--card-border) !important;
 }
 
-/* Card Preview */
-#card-preview {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    position: relative;
-    margin-bottom: 20px;
+.ui.modal .content {
+    background: var(--modal-bg) !important;
+    color: var(--text-primary) !important;
 }
 
-.preview-card {
-    margin-bottom: 20px !important;
-    width: 100% !important;
-    text-align: center;
-}
-
-.preview-card .header,
-.preview-card .meta,
-.preview-card .description {
-    font-family: monospace !important;
-    font-size: 1.2em !important;
-    color: #2185d0 !important;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-.preview-card .header:after {
-    content: '🎵';
-    margin-left: 8px;
-}
-
-.preview-card .meta:after {
-    content: '🎼';
-    margin-left: 8px;
-}
-
-.preview-card .description:after {
-    content: '💿';
-    margin-left: 8px;
-}
-
-/* Video Player */
-.plyr__video-embed {
-    margin: 20px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.plyr--video {
-    border-radius: 8px;
-}
-
-/* Turn Status */
+/* Game Status */
 #turn-status {
-    margin-bottom: 20px;
-    padding: 15px;
-}
-
-#turn-status h4 {
-    margin: 0;
-}
-
-#turn-timer {
-    font-weight: bold;
-    transition: color 0.3s;
-}
-
-#turn-timer.warning {
-    color: #db2828;
-}
-
-/* Validation Queue */
-.validation-queue {
-    margin-top: 20px;
-    padding: 10px;
-    background: #fff;
-    border-radius: 5px;
-}
-
-#validation-list .item {
-    padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-/* Room ID Display */
-#room-id-display {
-    font-family: monospace;
-    font-size: 1.2em;
-    padding: 5px 10px;
-    background: #f8f9fa;
-    border-radius: 4px;
-}
-
-/* Bet Modal */
-.bet-modal .content {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
     padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Coins Display */
+.coins {
+    font-size: 1.4em;
+    padding: 10px 20px;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    color: #ffd700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .timeline-card {
+        width: 140px !important;
+    }
+    
+    #card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+    
+    .ui.button {
+        width: 100%;
+    }
 }
 
 /* Animations */
@@ -317,50 +275,7 @@ body {
     animation: cardPlace 0.3s ease-out;
 }
 
-@keyframes confetti {
-    0% { transform: translateY(0) rotate(0deg); }
-    100% { transform: translateY(100vh) rotate(360deg); }
-}
-
-.confetti {
-    position: fixed;
-    width: 10px;
-    height: 10px;
-    background: var(--color);
-    animation: confetti 3s linear forwards;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .ui.grid {
-        margin: 0 !important;
-    }
-    
-    .column {
-        padding: 10px !important;
-    }
-    
-    #card-grid {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    }
-    
-    .card-slot {
-        width: 80px;
-        height: 120px;
-    }
-
-    .controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    #other-players-timelines .player-timeline {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
-
-    #intermediate-positions .button {
-        min-width: 150px;
-        font-size: 0.9em;
-    }
+/* Transitions */
+* {
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
 }

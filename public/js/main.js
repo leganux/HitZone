@@ -2,6 +2,45 @@
 $('.menu .item').tab();
 $('.ui.modal').modal();
 
+// Hide game room initially
+document.getElementById('game-room').classList.add('hidden');
+document.getElementById('welcome-screen').classList.remove('hidden');
+
+// Theme handling
+const themeToggle = document.getElementById('theme-toggle');
+const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+// Initialize theme from localStorage or system preference
+const savedTheme = localStorage.getItem('theme');
+const initialTheme = savedTheme || (prefersDarkScheme.matches ? 'dark' : 'light');
+document.documentElement.setAttribute('data-theme', initialTheme);
+updateThemeToggleIcon(initialTheme);
+
+// Theme toggle click handler
+themeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeToggleIcon(newTheme);
+});
+
+// Update theme toggle icon
+function updateThemeToggleIcon(theme) {
+    const icon = themeToggle.querySelector('i');
+    icon.className = theme === 'dark' ? 'icon moon' : 'icon sun';
+}
+
+// System theme change handler
+prefersDarkScheme.addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+        const newTheme = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        updateThemeToggleIcon(newTheme);
+    }
+});
+
 // Import sound effects
 import { createTimerBeep, createErrorSound } from '/sounds/timer.js';
 
