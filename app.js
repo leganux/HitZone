@@ -120,11 +120,17 @@ io.on('connection', (socket) => {
 
             if (isCorrect) {
                 player.timeline.push({ songId, position });
+                await room.save();
+
+                // Get fully populated room data
+                const populatedRoom = await Room.findOne({ roomId })
+                    .populate('players.timeline.songId');
+                const populatedPlayer = populatedRoom.players.find(p => p.socketId === socket.id);
                 
-                // Emit timeline update to all players
+                // Emit timeline update to all players with complete song data
                 io.to(roomId).emit('playerTimelineUpdate', {
                     playerId: socket.id,
-                    timeline: player.timeline
+                    timeline: populatedPlayer.timeline
                 });
                 
                 // Check win condition
@@ -232,6 +238,16 @@ io.on('connection', (socket) => {
     });
 
     // Handle disconnection with state persistence
+    // Handle song playback synchronization
+    socket.on('syncSongPlayback', async ({ roomId, song }) => {
+        try {
+            // Broadcast the song to all other players in the room
+            socket.to(roomId).emit('playSyncedSong', { song });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
     socket.on('disconnect', async () => {
         try {
             if (!currentRoom) return;

@@ -113,6 +113,9 @@ Al final quien junte la linea completa primero gana. Si en la ultima ronda mas d
 
 
 
+Hay un error en el algoritmo que compara las cards revisalo y corrigelo por ejemplo
+
+Cancion sonando  backstreetboys - 2000- everybody
 
 Cuando solo hay una carta en el timeline  por ejemplo  
 
@@ -120,11 +123,11 @@ Cuando solo hay una carta en el timeline  por ejemplo
 
 deben de aparecer los botones de  after y before
 
-   [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton after]
+   [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton after]  Entonces lo correfto aqui seria ponerla after
 
  Pero si hay mas de una carta  por ejemplo  2   debe haber botones intermedios para que la linea del tiempo quede en orden 
 
-    [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton AQUI]  [ 2000 - Britner spears - toxic] [Bonton after]
+    [Bonton before]  [ 1983 - Culture club- KArma camaleon] [Bonton AQUI]  [ 2000 - Britner spears - toxic] [Bonton after]  podria ser intermedio o after 
 
 Si la carta es del mismo año no importa si se pone antes o despues de la tarjeta que le corresponde	
   
@@ -134,3 +137,4 @@ Cancion sonando  backstreetboys - 2000- everybody
 	[Bonton before]  [ 1983 - Culture club- KArma camaleon] [Es correcto aqui]  [ 2000 - Britner spears - toxic] [Es correcto aqui]
 
 Cuando esta sonando una cancion porque el usuario ya escigio una carta el resto de las cartas se deben bloquear  hasta el sigueinte turno
+Al final el algoritmo debera ir ordenando la linea del tiempo pudiendo insertar targetas de forma intermedia 

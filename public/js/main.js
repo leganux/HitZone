@@ -602,21 +602,91 @@ socket.on('newCard', ({ song }) => {
     }
     console.log('Received song:', song);
     handleCardPlacement(song);
+    
+    // Emit song sync event to all players in the room
+    socket.emit('syncSongPlayback', {
+        roomId: currentRoom.roomId,
+        song: song
+    });
+});
+
+// Handle synchronized song playback
+socket.on('playSyncedSong', ({ song }) => {
+    if (!song || !song.link_or_file) return;
+    
+    const videoId = getYouTubeId(song.link_or_file);
+    if (videoId) {
+        try {
+            // Destroy existing player if it exists
+            if (player) {
+                player.destroy();
+                player = null;
+            }
+
+            // Clear and recreate player container
+            const playerContainer = document.getElementById('player');
+            playerContainer.innerHTML = '';
+            
+            // Create new container and iframe
+            const embedContainer = document.createElement('div');
+            embedContainer.className = 'plyr__video-embed';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1&start=30&end=60&autoplay=1`;
+            iframe.allowFullscreen = true;
+            iframe.allow = 'autoplay';
+            
+            embedContainer.appendChild(iframe);
+            playerContainer.appendChild(embedContainer);
+            
+            // Initialize new player after a short delay
+            setTimeout(() => {
+                player = new Plyr('#player', {
+                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume'],
+                    autoplay: true,
+                    muted: false,
+                    volume: 0.7,
+                    youtube: { 
+                        noCookie: true,
+                        playsinline: true,
+                        rel: 0,
+                        showinfo: 0,
+                        modestbranding: 1
+                    }
+                });
+                
+                player.once('ready', () => {
+                    try {
+                        player.play();
+                    } catch (error) {
+                        console.error('Playback error:', error);
+                    }
+                });
+            }, 100);
+        } catch (error) {
+            console.error('Player initialization error:', error);
+        }
+    }
 });
 
 // Handle timeline updates from other players
 socket.on('playerTimelineUpdate', ({ playerId, timeline }) => {
-    if (playerId !== mySocketId) {
-        const playerElement = document.querySelector(`[data-player-id="${playerId}"]`);
-        if (playerElement) {
-            const timelineContainer = playerElement.querySelector('.player-timeline');
-            timelineContainer.innerHTML = '';
-            const sortedTimeline = sortTimelineByYear(timeline);
-            sortedTimeline.forEach(card => {
-                const cardElement = createCardElement(card);
-                timelineContainer.appendChild(cardElement);
-            });
-        }
+    // Update the timeline for the player who made the change
+    if (playerId === mySocketId) {
+        myTimeline = timeline;
+        renderTimeline();
+    }
+    
+    // Update the timeline for other players
+    const playerElement = document.querySelector(`[data-player-id="${playerId}"]`);
+    if (playerElement) {
+        const timelineContainer = playerElement.querySelector('.player-timeline');
+        timelineContainer.innerHTML = '';
+        const sortedTimeline = sortTimelineByYear(timeline);
+        sortedTimeline.forEach(card => {
+            const cardElement = createCardElement(card);
+            timelineContainer.appendChild(cardElement);
+        });
     }
 });
 
@@ -639,13 +709,8 @@ socket.on('placementResult', ({ correct, socketId, nextPlayer }) => {
             document.getElementById('preview-artist').textContent = currentSong.artist;
             document.getElementById('preview-album').textContent = `Album: ${currentSong.album || 'N/A'}`;
             
-            // Add to timeline after a short delay to show the details
+            // Show success feedback after a short delay
             setTimeout(() => {
-                myTimeline.push({
-                    songId: currentSong,
-                    position: calculateNewPosition('after')
-                });
-                renderTimeline();
                 showConfetti();
                 
                 // Clear preview and stop playback
