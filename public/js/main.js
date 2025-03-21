@@ -19,7 +19,7 @@ let isMyTurn = false;
 let player = null;
 
 // Initialize Plyr
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     player = new Plyr('#player', {
         controls: ['play', 'progress', 'current-time', 'mute', 'volume'],
         autoplay: true,
@@ -51,7 +51,7 @@ function getYouTubeId(url) {
 }
 
 // Add song form handling
-$('#add-song-form').on('submit', function(e) {
+$('#add-song-form').on('submit', function (e) {
     e.preventDefault();
     const formData = {
         name: this.name.value,
@@ -69,29 +69,29 @@ $('#add-song-form').on('submit', function(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
     })
-    .then(response => response.json())
-    .then(data => {
-        $('#add-song-btn').removeClass('loading');
-        if (data._id) {
-            $('#song-message')
-                .removeClass('hidden negative')
-                .addClass('positive')
-                .html('<i class="check icon"></i> Song added successfully!');
-            $('#add-song-form')[0].reset();
-        } else {
+        .then(response => response.json())
+        .then(data => {
+            $('#add-song-btn').removeClass('loading');
+            if (data._id) {
+                $('#song-message')
+                    .removeClass('hidden negative')
+                    .addClass('positive')
+                    .html('<i class="check icon"></i> Song added successfully!');
+                $('#add-song-form')[0].reset();
+            } else {
+                $('#song-message')
+                    .removeClass('hidden positive')
+                    .addClass('negative')
+                    .html(`<i class="exclamation triangle icon"></i> ${data.message || 'Error adding song'}`);
+            }
+        })
+        .catch(error => {
+            $('#add-song-btn').removeClass('loading');
             $('#song-message')
                 .removeClass('hidden positive')
                 .addClass('negative')
-                .html(`<i class="exclamation triangle icon"></i> ${data.message || 'Error adding song'}`);
-        }
-    })
-    .catch(error => {
-        $('#add-song-btn').removeClass('loading');
-        $('#song-message')
-            .removeClass('hidden positive')
-            .addClass('negative')
-            .html('<i class="exclamation triangle icon"></i> Error adding song');
-    });
+                .html('<i class="exclamation triangle icon"></i> Error adding song');
+        });
 });
 
 // Create Room
@@ -116,7 +116,7 @@ document.getElementById('create-room-btn').addEventListener('click', async () =>
             body: JSON.stringify({ username, socketId: socket.id })
         });
         const room = await response.json();
-        
+
         if (room) {
             currentRoom = room;
             isHost = true;
@@ -139,7 +139,7 @@ document.getElementById('create-room-btn').addEventListener('click', async () =>
 document.getElementById('join-room-btn').addEventListener('click', async () => {
     const roomId = document.getElementById('join-room-id').value.trim();
     const username = document.getElementById('join-username').value.trim();
-    
+
     if (!roomId || !username) {
         await Swal.fire({
             title: 'Missing Information',
@@ -159,7 +159,7 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
             body: JSON.stringify({ roomId, username, socketId: socket.id })
         });
         const room = await response.json();
-        
+
         if (room) {
             currentRoom = room;
             mySocketId = socket.id;
@@ -183,7 +183,7 @@ function joinGameRoom(roomId, username) {
     document.getElementById('welcome-screen').classList.add('hidden');
     document.getElementById('game-room').classList.remove('hidden');
     document.getElementById('room-id-display').textContent = roomId;
-    
+
     if (isHost) {
         document.getElementById('host-controls').classList.remove('hidden');
     }
@@ -192,19 +192,19 @@ function joinGameRoom(roomId, username) {
 // Start Game
 document.getElementById('start-game-btn')?.addEventListener('click', async () => {
     if (!currentRoom) return;
-    
+
     const cardsToWin = document.getElementById('cards-to-win').value;
     try {
         const response = await fetch('/api/rooms/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 roomId: currentRoom.roomId,
-                cardsToWin 
+                cardsToWin
             })
         });
         const gameState = await response.json();
-        
+
         if (gameState) {
             document.getElementById('waiting-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
@@ -231,7 +231,7 @@ function initializeGame(gameState) {
         updateCoinsDisplay();
         renderTimeline();
         renderCardGrid();
-        
+
         // Initialize other players' timelines
         const otherPlayers = gameState.players.filter(p => p.socketId !== mySocketId);
         renderOtherPlayersTimelines(otherPlayers);
@@ -254,7 +254,7 @@ function sortTimelineByYear(timeline) {
 function renderTimeline() {
     const timeline = document.getElementById('timeline');
     timeline.innerHTML = '';
-    
+
     const sortedTimeline = sortTimelineByYear(myTimeline);
     sortedTimeline.forEach(card => {
         const cardElement = createCardElement(card);
@@ -298,19 +298,19 @@ function createCardElement(card) {
 function renderOtherPlayersTimelines(players) {
     const container = document.getElementById('other-players-timelines');
     container.innerHTML = '';
-    
+
     players.forEach(player => {
         const segment = document.createElement('div');
         segment.className = 'ui segment';
         segment.setAttribute('data-player-id', player.socketId);
-        
+
         segment.innerHTML = `
             <h4 class="ui header">${player.username}'s Timeline</h4>
             <div class="player-timeline ui cards"></div>
         `;
-        
+
         container.appendChild(segment);
-        
+
         // Render player's timeline
         const timelineContainer = segment.querySelector('.player-timeline');
         const sortedTimeline = sortTimelineByYear(player.timeline);
@@ -325,7 +325,7 @@ function renderOtherPlayersTimelines(players) {
 function renderCardGrid() {
     const grid = document.getElementById('card-grid');
     grid.innerHTML = '';
-    
+
     for (let i = 0; i < 50; i++) {
         const cardSlot = document.createElement('div');
         cardSlot.className = 'card-slot';
@@ -338,11 +338,11 @@ function renderCardGrid() {
 // Select a card
 function selectCard(index) {
     if (!isMyTurn || !currentRoom || currentSong) return;
-    
+
     // Lock all cards immediately when one is selected
     lockCardSlots();
-    
-    socket.emit('selectCard', { 
+
+    socket.emit('selectCard', {
         roomId: currentRoom.roomId,
         position: index
     });
@@ -357,14 +357,14 @@ function handleCardPlacement(song) {
 
     console.log('Handling card placement:', song);
     currentSong = song;
-    
+
     // Lock all card slots while placing
     const cardSlots = document.querySelectorAll('.card-slot');
     cardSlots.forEach(slot => {
         slot.classList.add('disabled');
         slot.style.pointerEvents = 'none';
     });
-    
+
     // Update preview card with hidden details
     document.getElementById('preview-name').textContent = '???';
     document.getElementById('preview-artist').textContent = '???';
@@ -372,7 +372,7 @@ function handleCardPlacement(song) {
 
     // Update placement buttons based on timeline
     updatePlacementButtons();
-    
+
     // Handle YouTube video
     const videoId = getYouTubeId(song.link_or_file);
     if (videoId) {
@@ -386,19 +386,19 @@ function handleCardPlacement(song) {
             // Clear and recreate player container
             const playerContainer = document.getElementById('player');
             playerContainer.innerHTML = '';
-            
+
             // Create new container and iframe
             const embedContainer = document.createElement('div');
             embedContainer.className = 'plyr__video-embed';
-            
+
             const iframe = document.createElement('iframe');
             iframe.src = `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1&start=30&end=60&autoplay=1`;
             iframe.allowFullscreen = true;
             iframe.allow = 'autoplay';
-            
+
             embedContainer.appendChild(iframe);
             playerContainer.appendChild(embedContainer);
-            
+
             // Initialize new player after a short delay
             setTimeout(() => {
                 player = new Plyr('#player', {
@@ -406,7 +406,7 @@ function handleCardPlacement(song) {
                     autoplay: true,
                     muted: false,
                     volume: 0.7,
-                    youtube: { 
+                    youtube: {
                         noCookie: true,
                         playsinline: true,
                         rel: 0,
@@ -414,7 +414,7 @@ function handleCardPlacement(song) {
                         modestbranding: 1
                     }
                 });
-                
+
                 player.once('ready', () => {
                     try {
                         player.play();
@@ -429,10 +429,10 @@ function handleCardPlacement(song) {
     } else {
         console.error('Invalid YouTube URL:', song.link_or_file);
     }
-    
+
     // Show placement UI
     document.getElementById('card-preview').classList.remove('hidden');
-    
+
     // Setup placement buttons
     document.getElementById('place-before').onclick = () => confirmPlacement('before');
     document.getElementById('place-after').onclick = () => confirmPlacement('after');
@@ -442,24 +442,24 @@ function handleCardPlacement(song) {
 function updatePlacementButtons() {
     const intermediateContainer = document.getElementById('intermediate-positions');
     intermediateContainer.innerHTML = '';
-    
+
     const sortedTimeline = sortTimelineByYear(myTimeline);
-    
+
     // Always show before button for the first card
     const beforeButton = document.createElement('button');
     beforeButton.className = 'ui button blue';
-    beforeButton.textContent = sortedTimeline.length > 0 
+    beforeButton.textContent = sortedTimeline.length > 0
         ? `Place before ${sortedTimeline[0].songId.release_year}`
         : 'Place as first card';
     beforeButton.onclick = () => confirmPlacement('before');
     intermediateContainer.appendChild(beforeButton);
-    
+
     // Show intermediate buttons for multiple cards
     if (sortedTimeline.length > 0) {
         for (let i = 0; i < sortedTimeline.length; i++) {
             const currentCard = sortedTimeline[i];
             const nextCard = sortedTimeline[i + 1];
-            
+
             // For the last card or when there's a gap in years between cards
             if (!nextCard || currentCard.songId.release_year < nextCard.songId.release_year) {
                 const afterButton = document.createElement('button');
@@ -468,7 +468,7 @@ function updatePlacementButtons() {
                 afterButton.onclick = () => confirmPlacement('after', i);
                 intermediateContainer.appendChild(afterButton);
             }
-            
+
             // Add between button if there's a next card
             if (nextCard) {
                 const betweenButton = document.createElement('button');
@@ -509,7 +509,7 @@ function unlockCardSlots() {
 // Confirm card placement
 function confirmPlacement(position, index) {
     if (!currentSong || !currentRoom) return;
-    
+
     const newPosition = calculateNewPosition(position, index);
     socket.emit('placementDecision', {
         roomId: currentRoom.roomId,
@@ -522,9 +522,9 @@ function confirmPlacement(position, index) {
 // Calculate new position
 function calculateNewPosition(placement, index) {
     if (myTimeline.length === 0) return 0;
-    
+
     const sortedTimeline = sortTimelineByYear(myTimeline);
-    
+
     if (placement === 'before') {
         return sortedTimeline[0].position - 1;
     } else if (placement === 'between') {
@@ -541,7 +541,7 @@ function updateCoinsDisplay() {
     document.getElementById('coin-count').textContent = myCoins;
     const buyCardBtn = document.getElementById('buy-card-btn');
     const stealCardBtn = document.getElementById('steal-card-btn');
-    
+
     if (buyCardBtn) {
         buyCardBtn.classList.toggle('disabled', myCoins < 3);
     }
@@ -572,7 +572,7 @@ socket.on('roomJoined', (room) => {
 socket.on('gameStarted', ({ currentPlayer, timeLimit, gameState }) => {
     document.getElementById('waiting-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
-    
+
     // Update game state
     if (gameState) {
         document.getElementById('current-player').textContent = currentPlayer;
@@ -588,7 +588,7 @@ socket.on('gameStarted', ({ currentPlayer, timeLimit, gameState }) => {
             }
         }
     }
-    
+
     // Initialize game UI
     initializeGame(currentRoom);
 });
@@ -606,7 +606,7 @@ socket.on('gameStateUpdated', ({ gameState, players }) => {
     if (currentRoom) {
         currentRoom.gameState = gameState;
         currentRoom.players = players;
-        
+
         // Update UI
         updatePlayersList(players);
         const player = players.find(p => p.socketId === mySocketId);
@@ -663,13 +663,13 @@ socket.on('turnUpdate', ({ currentPlayer, timeLimit }) => {
 socket.on('turnStart', ({ playerId, playerName, timeLimit }) => {
     isMyTurn = playerId === mySocketId;
     document.getElementById('turn-actions').classList.toggle('hidden', !isMyTurn);
-    document.getElementById('current-player').textContent = 
+    document.getElementById('current-player').textContent =
         isMyTurn ? 'Your Turn' : `${playerName}'s Turn`;
-    
+
     // Reset and start turn timer
     document.getElementById('turn-timer').style.color = '';
     startTurnTimer(timeLimit);
-    
+
     // Reset song state and unlock cards at the start of turn
     currentSong = null;
     unlockCardSlots();
@@ -702,7 +702,7 @@ socket.on('newCard', ({ song }) => {
     }
     console.log('Received song:', song);
     handleCardPlacement(song);
-    
+
     // Emit song sync event to all players in the room
     socket.emit('syncSongPlayback', {
         roomId: currentRoom.roomId,
@@ -713,7 +713,7 @@ socket.on('newCard', ({ song }) => {
 // Handle synchronized song playback
 socket.on('playSyncedSong', ({ song }) => {
     if (!song || !song.link_or_file) return;
-    
+
     const videoId = getYouTubeId(song.link_or_file);
     if (videoId) {
         try {
@@ -726,19 +726,19 @@ socket.on('playSyncedSong', ({ song }) => {
             // Clear and recreate player container
             const playerContainer = document.getElementById('player');
             playerContainer.innerHTML = '';
-            
+
             // Create new container and iframe
             const embedContainer = document.createElement('div');
             embedContainer.className = 'plyr__video-embed';
-            
+
             const iframe = document.createElement('iframe');
             iframe.src = `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1&start=30&end=60&autoplay=1`;
             iframe.allowFullscreen = true;
             iframe.allow = 'autoplay';
-            
+
             embedContainer.appendChild(iframe);
             playerContainer.appendChild(embedContainer);
-            
+
             // Initialize new player after a short delay
             setTimeout(() => {
                 player = new Plyr('#player', {
@@ -746,7 +746,7 @@ socket.on('playSyncedSong', ({ song }) => {
                     autoplay: true,
                     muted: false,
                     volume: 0.7,
-                    youtube: { 
+                    youtube: {
                         noCookie: true,
                         playsinline: true,
                         rel: 0,
@@ -754,7 +754,7 @@ socket.on('playSyncedSong', ({ song }) => {
                         modestbranding: 1
                     }
                 });
-                
+
                 player.once('ready', () => {
                     try {
                         player.play();
@@ -776,7 +776,7 @@ socket.on('playerTimelineUpdate', ({ playerId, timeline }) => {
         myTimeline = timeline;
         renderTimeline();
     }
-    
+
     // Update the timeline for other players
     const playerElement = document.querySelector(`[data-player-id="${playerId}"]`);
     if (playerElement) {
@@ -797,25 +797,27 @@ socket.on('stopPlaying', () => {
     }
 });
 
-socket.on('placementResult', async ({ correct, socketId, nextPlayer, song }) => {
+socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer, song }) => {
     // Update current player display
     document.getElementById('current-player').textContent = 
         nextPlayer.socketId === mySocketId ? 'Your Turn' : `${nextPlayer.username}'s Turn`;
     
-    if (socketId === mySocketId && song) {
-        // Show the actual song details
-        document.getElementById('preview-name').textContent = song.name;
-        document.getElementById('preview-artist').textContent = song.artist;
-        document.getElementById('preview-album').textContent = `Album: ${song.album || 'N/A'}`;
-        
-        // Wait for 1 second to show the song details
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+    if (song) {
         try {
+            if (socketId === mySocketId) {
+                // Show the actual song details for the current player
+                document.getElementById('preview-name').textContent = song.name;
+                document.getElementById('preview-artist').textContent = song.artist;
+                document.getElementById('preview-album').textContent = `Album: ${song.album || 'N/A'}`;
+                
+                // Wait for 1 second to show the song details
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
             if (correct) {
-                // Show success alert
+                // Show success alert to all players
                 await Swal.fire({
-                    title: 'Correct Placement!',
+                    title: socketId === mySocketId ? 'Correct Placement!' : `${playerName} Placed Correctly!`,
                     text: `${song.name} by ${song.artist} was placed correctly!`,
                     icon: 'success',
                     timer: 2000,
@@ -824,13 +826,17 @@ socket.on('placementResult', async ({ correct, socketId, nextPlayer, song }) => 
                     color: '#ffffff'
                 });
                 
-                showConfetti();
+                if (socketId === mySocketId) {
+                    showConfetti();
+                }
             } else {
-                createErrorSound();
+                if (socketId === mySocketId) {
+                    createErrorSound();
+                }
                 
-                // Show error alert
+                // Show error alert to all players
                 await Swal.fire({
-                    title: 'Incorrect Placement!',
+                    title: socketId === mySocketId ? 'Incorrect Placement!' : `${playerName} Placed Incorrectly!`,
                     text: `${song.name} by ${song.artist} has been discarded.`,
                     icon: 'error',
                     timer: 2000,
@@ -842,14 +848,14 @@ socket.on('placementResult', async ({ correct, socketId, nextPlayer, song }) => 
         } catch (error) {
             console.error('Error showing alert:', error);
         }
-        
+
         // Clear preview and stop playback
         if (player) {
             player.pause();
         }
         currentSong = null;
         document.getElementById('card-preview').classList.add('hidden');
-        
+
         // Unlock card slots for next turn
         const cardSlots = document.querySelectorAll('.card-slot');
         cardSlots.forEach(slot => {
@@ -864,10 +870,10 @@ socket.on('gameWon', ({ winner, scores }) => {
     clearInterval(turnTimer);
     const scoresList = document.getElementById('final-scores');
     scoresList.innerHTML = '';
-    
+
     // Sort scores in descending order
     scores.sort((a, b) => b.score - a.score);
-    
+
     scores.forEach((player, index) => {
         const item = document.createElement('div');
         item.className = 'item';
@@ -880,7 +886,7 @@ socket.on('gameWon', ({ winner, scores }) => {
         `;
         scoresList.appendChild(item);
     });
-    
+
     $('.game-over.modal').modal('show');
 });
 
@@ -926,7 +932,7 @@ function updatePlayersList(players) {
         playerItem.textContent = player.username;
         list.appendChild(playerItem);
     });
-    
+
     // Update other players' timelines
     const otherPlayers = players.filter(p => p.socketId !== mySocketId);
     renderOtherPlayersTimelines(otherPlayers);
@@ -942,13 +948,13 @@ document.getElementById('bet-coin-btn')?.addEventListener('click', () => {
 document.getElementById('submit-guess')?.addEventListener('click', () => {
     const artist = document.getElementById('guess-artist').value;
     const song = document.getElementById('guess-song').value;
-    
+
     socket.emit('submitGuess', {
         roomId: currentRoom.roomId,
         socketId: mySocketId,
         guess: { artist, song }
     });
-    
+
     $('.bet-modal').modal('hide');
 });
 

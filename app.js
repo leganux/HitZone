@@ -189,9 +189,13 @@ io.on('connection', (socket) => {
             const nextPlayer = room.players[nextPlayerIndex];
 
             // Notify players
+            // Get current player's username
+            const currentPlayer = room.players.find(p => p.socketId === socket.id);
+            
             io.to(roomId).emit('placementResult', { 
                 correct: isCorrect, 
                 socketId: socket.id,
+                playerName: currentPlayer.username,
                 song: song,  // Include the song data in the response
                 nextPlayer: {
                     socketId: nextPlayer.socketId,
