@@ -5,47 +5,58 @@
 
 /* Theme Variables */
 :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --bg-tertiary: #ffffff;
-    --text-primary: #000000;
-    --text-secondary: #6c757d;
-    --accent-primary: #1db954;
-    --accent-secondary: #1ed760;
+    /* Light theme variables */
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e9ecef;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --accent-primary: #00cc88;
+    --accent-secondary: #0099cc;
     --card-bg: #ffffff;
-    --card-border: rgba(0,0,0,0.1);
-    --timeline-bg: rgba(0,0,0,0.05);
-    --shadow-color: rgba(0,0,0,0.1);
-    --hover-bg: rgba(0,0,0,0.05);
+    --card-border: rgba(0, 0, 0, 0.1);
+    --timeline-bg: rgba(0, 0, 0, 0.05);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --hover-bg: rgba(0, 0, 0, 0.05);
     --modal-bg: #ffffff;
     --input-bg: #ffffff;
-    --input-border: #e0e0e0;
+    --input-border: #cccccc;
+    --neon-glow: none;
+    --neon-green-glow: none;
 }
 
+/* Dark theme variables */
 [data-theme="dark"] {
-    --bg-primary: #121212;
-    --bg-secondary: #181818;
-    --bg-tertiary: #282828;
+    --bg-primary: #0a1929;
+    --bg-secondary: #0d2137;
+    --bg-tertiary: #162D4D;
     --text-primary: #ffffff;
-    --text-secondary: #b3b3b3;
-    --accent-primary: #1db954;
-    --accent-secondary: #1ed760;
-    --card-bg: #282828;
-    --card-border: rgba(255,255,255,0.1);
-    --timeline-bg: rgba(255,255,255,0.05);
-    --shadow-color: rgba(0,0,0,0.3);
-    --hover-bg: rgba(255,255,255,0.1);
-    --modal-bg: #282828;
-    --input-bg: #404040;
-    --input-border: #404040;
+    --text-secondary: #88ccff;
+    --accent-primary: #00ff9d;
+    --accent-secondary: #00ccff;
+    --card-bg: #162D4D;
+    --card-border: rgba(0, 204, 255, 0.3);
+    --timeline-bg: rgba(0, 204, 255, 0.05);
+    --shadow-color: rgba(0, 204, 255, 0.2);
+    --hover-bg: rgba(0, 204, 255, 0.1);
+    --modal-bg: #0d2137;
+    --input-bg: #162D4D;
+    --input-border: #00ccff;
+    --neon-glow: 0 0 10px rgba(0, 204, 255, 0.5),
+                 0 0 20px rgba(0, 204, 255, 0.3),
+                 0 0 30px rgba(0, 204, 255, 0.1);
+    --neon-green-glow: 0 0 10px rgba(0, 255, 157, 0.5),
+                       0 0 20px rgba(0, 255, 157, 0.3),
+                       0 0 30px rgba(0, 255, 157, 0.1);
 }
 
 /* General Styles */
 body {
-    background-color: var(--bg-primary);
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
     color: var(--text-primary);
     transition: background-color 0.3s, color 0.3s;
     padding: 20px;
+    min-height: 100vh;
 }
 
 .ui.container {
@@ -54,67 +65,177 @@ body {
 
 .ui.header {
     color: var(--text-primary) !important;
+    text-shadow: var(--neon-glow);
 }
 
 .ui.segment {
     background: var(--bg-secondary);
-    border-color: var(--card-border);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--neon-glow);
+    backdrop-filter: blur(10px);
     color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.ui.segment:hover {
+    box-shadow: var(--neon-green-glow);
+}
+
+/* Game Instructions */
+.game-instructions {
+    background: var(--bg-tertiary);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 20px 0;
+    border: 1px solid var(--accent-secondary);
+    box-shadow: var(--neon-glow);
+}
+
+.game-instructions h2 {
+    color: var(--accent-primary);
+    text-shadow: var(--neon-green-glow);
+    margin-bottom: 20px;
+}
+
+.game-instructions .slogan {
+    font-size: 1.5em;
+    color: var(--accent-secondary);
+    text-align: center;
+    margin: 20px 0;
+    text-shadow: var(--neon-glow);
+    animation: pulse 2s infinite;
 }
 
 /* Theme Toggle */
 #theme-toggle {
     background: var(--bg-tertiary);
-    color: var(--text-primary);
+    color: var(--accent-secondary);
     border: 1px solid var(--card-border);
+    box-shadow: var(--neon-glow);
 }
 
 /* Cards and Timeline */
+/* Card Background Variations */
+.timeline-card:nth-child(5n+1) {
+    background: linear-gradient(135deg, #162D4D, #1a4580) !important;
+    border: 1px solid rgba(0, 204, 255, 0.3) !important;
+}
+
+.timeline-card:nth-child(5n+2) {
+    background: linear-gradient(135deg, #1a3d6c, #2c5c9e) !important;
+    border: 1px solid rgba(0, 255, 157, 0.3) !important;
+}
+
+.timeline-card:nth-child(5n+3) {
+    background: linear-gradient(135deg, #1c2f4a, #2b4870) !important;
+    border: 1px solid rgba(136, 204, 255, 0.3) !important;
+}
+
+.timeline-card:nth-child(5n+4) {
+    background: linear-gradient(135deg, #203354, #334e7a) !important;
+    border: 1px solid rgba(0, 230, 230, 0.3) !important;
+}
+
+.timeline-card:nth-child(5n+5) {
+    background: linear-gradient(135deg, #152844, #243e66) !important;
+    border: 1px solid rgba(157, 255, 0, 0.3) !important;
+}
+
 .timeline-card {
-    background: var(--card-bg) !important;
-    border: 1px solid var(--card-border) !important;
     border-radius: 8px !important;
-    box-shadow: 0 4px 12px var(--shadow-color) !important;
-    transition: transform 0.3s, box-shadow 0.3s !important;
+    box-shadow: var(--neon-glow) !important;
+    transition: all 0.3s ease !important;
     width: 180px !important;
     margin: 10px !important;
     overflow: hidden;
+    position: relative;
+    backdrop-filter: blur(5px);
+}
+
+.timeline-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 204, 255, 0.2),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.timeline-card:hover::before {
+    left: 100%;
 }
 
 .timeline-card .content {
-    background: var(--card-bg) !important;
-    color: var(--text-primary) !important;
+    background: transparent !important;
+    color: #ffffff !important;
     padding: 1rem !important;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.timeline-card .content .header {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5),
+                 0 0 10px rgba(0, 204, 255, 0.5) !important;
+}
+
+.timeline-card .content .meta,
+.timeline-card .content .description {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.timeline-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.timeline-card:hover::after {
+    opacity: 1;
 }
 
 .timeline-card .header {
-    color: var(--text-primary) !important;
     font-size: 1.1em !important;
     margin-bottom: 0.5em !important;
-}
-
-.timeline-card .meta {
-    color: var(--text-secondary) !important;
+    letter-spacing: 0.5px;
 }
 
 .timeline-card:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 8px 16px var(--shadow-color) !important;
+    transform: translateY(-5px) scale(1.02) !important;
+    box-shadow: var(--neon-green-glow) !important;
 }
 
 .timeline-card.base {
     border: 2px solid var(--accent-primary) !important;
-    box-shadow: 0 0 15px rgba(29, 185, 84, 0.3) !important;
+    box-shadow: var(--neon-green-glow) !important;
 }
 
 .timeline-card.correct {
     border: 2px solid var(--accent-primary) !important;
+    animation: correctCard 0.5s ease;
 }
 
 .timeline-card.incorrect {
     text-decoration: line-through;
     opacity: 0.7;
     border: 2px solid #ff4444 !important;
+    animation: incorrectCard 0.5s ease;
 }
 
 /* Timeline Area */
@@ -128,6 +249,9 @@ body {
     gap: 15px;
     margin-bottom: 30px;
     border: 2px solid var(--card-border);
+    box-shadow: var(--neon-glow);
+    position: relative;
+    overflow: hidden;
 }
 
 /* Card Grid */
@@ -138,6 +262,7 @@ body {
     padding: 20px;
     background: var(--bg-tertiary);
     border-radius: 12px;
+    box-shadow: var(--neon-glow);
 }
 
 .card-slot {
@@ -150,12 +275,13 @@ body {
     color: white;
     font-size: 24px;
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: all 0.3s ease;
+    box-shadow: var(--neon-glow);
 }
 
 .card-slot:not(.disabled):hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 16px var(--shadow-color);
+    box-shadow: var(--neon-green-glow);
 }
 
 /* Controls and Buttons */
@@ -167,20 +293,55 @@ body {
     gap: 15px;
     align-items: center;
     margin-top: 20px;
+    box-shadow: var(--neon-glow);
 }
 
 .ui.button {
     border-radius: 20px !important;
     padding: 12px 24px !important;
-    transition: all 0.3s !important;
+    transition: all 0.3s ease !important;
+    background: var(--bg-tertiary) !important;
+    color: var(--accent-secondary) !important;
+    border: 1px solid var(--accent-secondary) !important;
+    box-shadow: var(--neon-glow) !important;
+}
+
+.ui.button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--neon-green-glow) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
 }
 
 .ui.primary.button {
-    background: var(--accent-primary) !important;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+    color: var(--bg-primary) !important;
 }
 
-.ui.primary.button:hover {
-    background: var(--accent-secondary) !important;
+/* Animations */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes correctCard {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes incorrectCard {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes floatingCards {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
 }
 
 /* Player List */
@@ -190,17 +351,21 @@ body {
     border-radius: 8px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    border: 1px solid var(--card-border);
+    box-shadow: var(--neon-glow);
 }
 
 .current-player {
     background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary)) !important;
-    color: white !important;
+    color: var(--bg-primary) !important;
+    animation: pulse 2s infinite;
 }
 
 /* Forms and Inputs */
 .ui.form .field label {
-    color: var(--text-primary) !important;
+    color: var(--accent-secondary) !important;
+    text-shadow: var(--neon-glow);
 }
 
 .ui.form input, .ui.form select {
@@ -208,32 +373,12 @@ body {
     border: 1px solid var(--input-border) !important;
     color: var(--text-primary) !important;
     border-radius: 8px !important;
+    box-shadow: var(--neon-glow);
 }
 
-/* Modals */
-.ui.modal {
-    background: var(--modal-bg) !important;
-    border-radius: 12px !important;
-    overflow: hidden;
-}
-
-.ui.modal .header {
-    background: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-    border-bottom: 1px solid var(--card-border) !important;
-}
-
-.ui.modal .content {
-    background: var(--modal-bg) !important;
-    color: var(--text-primary) !important;
-}
-
-/* Game Status */
-#turn-status {
-    background: var(--bg-tertiary);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+.ui.form input:focus, .ui.form select:focus {
+    border-color: var(--accent-primary) !important;
+    box-shadow: var(--neon-green-glow);
 }
 
 /* Coins Display */
@@ -243,7 +388,9 @@ body {
     background: var(--bg-tertiary);
     border-radius: 20px;
     color: #ffd700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    animation: floatingCards 3s ease-in-out infinite;
 }
 
 /* Responsive Design */
@@ -263,19 +410,4 @@ body {
     .ui.button {
         width: 100%;
     }
-}
-
-/* Animations */
-@keyframes cardPlace {
-    from { transform: scale(1.1); opacity: 0.7; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-.card-placed {
-    animation: cardPlace 0.3s ease-out;
-}
-
-/* Transitions */
-* {
-    transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
 }

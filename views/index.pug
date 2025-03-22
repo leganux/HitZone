@@ -13,13 +13,43 @@ html(lang="en")
         script(src="https://cdn.jsdelivr.net/npm/sweetalert2@11")
     body
         .ui.container
+            h1.ui.header.massive.animated
+                center 
+                    img(src="/images/logo.png", alt="HitZone Logo" style="max-width: 250px")
+            
+            .game-instructions
+                .slogan "¡Donde el Ritmo del Tiempo Define al Campeón! 🎵✨"
+                h2 Cómo Jugar
+                .ui.grid
+                    .eight.wide.column
+                        h3 
+                            i.music.icon
+                            | Objetivo
+                        p Sé el mejor DJ del tiempo: ¡Coloca las canciones en su año correcto!
+                        
+                        h3 
+                            i.trophy.icon
+                            | Cómo Ganar
+                        p ¡El primer jugador en conseguir 10 canciones correctas en su línea temporal gana!
+                        
+                    .eight.wide.column
+                        h3 
+                            i.play.icon
+                            | Pasos del Juego
+                        ol
+                            li 🎲 Roba una carta de canción
+                            li 🎧 Escucha la melodía
+                            li 🤔 Adivina el año
+                            li 📍 Colócala en tu línea temporal
+                            li ✨ ¡Acierta y mantén la carta!
+
             .ui.grid.middle.aligned
                 .thirteen.wide.column
-                    h1.ui.header.massive HitZone
+                    h2.ui.header.welcome-title Welcome to HitZone
                 .three.wide.column.right.aligned
                     button#theme-toggle.ui.circular.icon.button
-                        i.icon.sun
-            .ui.segment
+                        i.icon.moon
+            .ui.segment.welcome-segment
                 #welcome-screen
                     .ui.top.attached.tabular.menu
                         a.item.active(data-tab="rooms") Rooms
@@ -124,10 +154,6 @@ html(lang="en")
                                                         span#turn-timer 60s
                                         
                                         #turn-actions.hidden
-                                            .ui.segment
-                                                h3.ui.header Available Cards
-                                                #card-grid.ui.cards
-                                            
                                             #card-preview.ui.segment.hidden
                                                 h4.ui.header Selected Card
                                                 .ui.card.preview-card
@@ -143,6 +169,11 @@ html(lang="en")
                                                     #intermediate-positions.ui.buttons
                                                     button.ui.button.blue#place-after Place After
                                                     button.ui.button.yellow#bet-coin-btn Guess Song (1🪙)
+                                            .ui.segment
+                                                h3.ui.header Available Cards
+                                                #card-grid.ui.cards
+                                            
+                                            
 
                                 .ui.modal.bet-modal
                                     .header Guess Artist/Song (1🪙)
@@ -188,4 +219,5 @@ html(lang="en")
                                         .ui.primary.button.close Continue
 
         script(src="/socket.io/socket.io.js")
+        script(src="/js/animations.js")
         script(src="/js/main.js", type="module")

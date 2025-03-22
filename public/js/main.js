@@ -11,13 +11,12 @@ const themeToggle = document.getElementById('theme-toggle');
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 // Initialize theme from localStorage or system preference
-const savedTheme = localStorage.getItem('theme');
-const initialTheme = savedTheme || (prefersDarkScheme.matches ? 'dark' : 'light');
-document.documentElement.setAttribute('data-theme', initialTheme);
-updateThemeToggleIcon(initialTheme);
+const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark theme
+document.documentElement.setAttribute('data-theme', savedTheme);
+updateThemeToggleIcon(savedTheme);
 
 // Theme toggle click handler
-themeToggle.addEventListener('click', () => {
+themeToggle?.addEventListener('click', () => {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
@@ -26,10 +25,54 @@ themeToggle.addEventListener('click', () => {
     updateThemeToggleIcon(newTheme);
 });
 
-// Update theme toggle icon
+// Update theme toggle icon and styles
 function updateThemeToggleIcon(theme) {
-    const icon = themeToggle.querySelector('i');
-    icon.className = theme === 'dark' ? 'icon moon' : 'icon sun';
+    const icon = themeToggle?.querySelector('i');
+    if (icon) {
+        icon.className = theme === 'dark' ? 'icon moon' : 'icon sun';
+    }
+    
+    // Update card colors based on theme
+    const cards = document.querySelectorAll('.timeline-card');
+    cards.forEach((card, index) => {
+        if (theme === 'dark') {
+            switch (index % 5) {
+                case 0:
+                    card.style.background = 'linear-gradient(135deg, #162D4D, #1a4580)';
+                    break;
+                case 1:
+                    card.style.background = 'linear-gradient(135deg, #1a3d6c, #2c5c9e)';
+                    break;
+                case 2:
+                    card.style.background = 'linear-gradient(135deg, #1c2f4a, #2b4870)';
+                    break;
+                case 3:
+                    card.style.background = 'linear-gradient(135deg, #203354, #334e7a)';
+                    break;
+                case 4:
+                    card.style.background = 'linear-gradient(135deg, #152844, #243e66)';
+                    break;
+            }
+        } else {
+            switch (index % 5) {
+                case 0:
+                    card.style.background = 'linear-gradient(135deg, #e3f2fd, #bbdefb)';
+                    break;
+                case 1:
+                    card.style.background = 'linear-gradient(135deg, #e8f5e9, #c8e6c9)';
+                    break;
+                case 2:
+                    card.style.background = 'linear-gradient(135deg, #f3e5f5, #e1bee7)';
+                    break;
+                case 3:
+                    card.style.background = 'linear-gradient(135deg, #fff3e0, #ffe0b2)';
+                    break;
+                case 4:
+                    card.style.background = 'linear-gradient(135deg, #e0f7fa, #b2ebf2)';
+                    break;
+            }
+        }
+    });
 }
 
 // System theme change handler
@@ -718,13 +761,35 @@ socket.on('turnTimeout', async () => {
     if (isMyTurn) {
         try {
             await Swal.fire({
-                title: 'Time\'s Up!',
-                text: 'Your turn has ended.',
-                icon: 'warning',
-                timer: 2000,
+                html: `
+                    <div style="
+                        background: linear-gradient(135deg, #4d2d1a, #804d1a);
+                        padding: 20px;
+                        border-radius: 10px;
+                        border: 2px solid #ffa500;
+                        box-shadow: 0 0 20px rgba(255, 165, 0, 0.3);
+                    ">
+                        <h2 style="
+                            color: #ffa500;
+                            margin-bottom: 20px;
+                            text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+                            font-size: 2em;
+                        ">Time's Up!</h2>
+                        <div style="
+                            font-size: 1.5em;
+                            color: #ffcc80;
+                            margin: 10px 0;
+                            text-shadow: 0 0 5px rgba(255, 165, 0, 0.3);
+                        ">Your turn has ended</div>
+                    </div>
+                `,
+                background: 'transparent',
+                backdrop: 'rgba(41, 25, 10, 0.9)',
+                timer: 3000,
                 showConfirmButton: false,
-                background: '#ffc107',
-                color: '#000000'
+                customClass: {
+                    popup: 'animated fadeIn'
+                }
             });
         } catch (error) {
             console.error('Error showing alert:', error);
@@ -856,13 +921,49 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
             if (correct) {
                 // Show success alert to all players
                 await Swal.fire({
-                    title: socketId === mySocketId ? 'Correct Placement!' : `${playerName} Placed Correctly!`,
-                    text: `${song.name} by ${song.artist} was placed correctly!`,
-                    icon: 'success',
-                    timer: 2000,
+                    html: `
+                        <div style="
+                            background: linear-gradient(135deg, #162D4D, #1a4580);
+                            padding: 20px;
+                            border-radius: 10px;
+                            border: 2px solid #00ff9d;
+                            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+                        ">
+                            <h2 style="
+                                color: #00ff9d;
+                                margin-bottom: 20px;
+                                text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+                            ">${socketId === mySocketId ? 'Correct Placement!' : `${playerName} Placed Correctly!`}</h2>
+                            <div style="
+                                font-size: 2.5em;
+                                color: #ffffff;
+                                margin: 20px 0;
+                                text-shadow: 0 0 10px rgba(0, 204, 255, 0.5);
+                            ">${song.release_year}</div>
+                            <div style="
+                                font-size: 1.5em;
+                                color: #00ccff;
+                                margin: 10px 0;
+                                text-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
+                            ">${song.name}</div>
+                            <div style="
+                                color: #88ccff;
+                                margin-top: 10px;
+                            ">by ${song.artist}</div>
+                            <div style="
+                                color: #88ccff;
+                                font-size: 0.9em;
+                                margin-top: 5px;
+                            ">${song.album || ''}</div>
+                        </div>
+                    `,
+                    background: 'transparent',
+                    backdrop: 'rgba(10, 25, 41, 0.9)',
+                    timer: 3000,
                     showConfirmButton: false,
-                    background: '#28a745',
-                    color: '#ffffff'
+                    customClass: {
+                        popup: 'animated fadeIn'
+                    }
                 });
                 
                 if (socketId === mySocketId) {
@@ -875,13 +976,49 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                 
                 // Show error alert to all players
                 await Swal.fire({
-                    title: socketId === mySocketId ? 'Incorrect Placement!' : `${playerName} Placed Incorrectly!`,
-                    text: `${song.name} by ${song.artist} has been discarded.`,
-                    icon: 'error',
-                    timer: 2000,
+                    html: `
+                        <div style="
+                            background: linear-gradient(135deg, #2d1a1a, #4d1a1a);
+                            padding: 20px;
+                            border-radius: 10px;
+                            border: 2px solid #ff4444;
+                            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+                        ">
+                            <h2 style="
+                                color: #ff4444;
+                                margin-bottom: 20px;
+                                text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+                            ">${socketId === mySocketId ? 'Incorrect Placement!' : `${playerName} Placed Incorrectly!`}</h2>
+                            <div style="
+                                font-size: 2.5em;
+                                color: #ffffff;
+                                margin: 20px 0;
+                                text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+                            ">${song.release_year}</div>
+                            <div style="
+                                font-size: 1.5em;
+                                color: #ff8888;
+                                margin: 10px 0;
+                                text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+                            ">${song.name}</div>
+                            <div style="
+                                color: #ffaaaa;
+                                margin-top: 10px;
+                            ">by ${song.artist}</div>
+                            <div style="
+                                color: #ffaaaa;
+                                font-size: 0.9em;
+                                margin-top: 5px;
+                            ">${song.album || ''}</div>
+                        </div>
+                    `,
+                    background: 'transparent',
+                    backdrop: 'rgba(41, 10, 10, 0.9)',
+                    timer: 3000,
                     showConfirmButton: false,
-                    background: '#dc3545',
-                    color: '#ffffff'
+                    customClass: {
+                        popup: 'animated fadeIn'
+                    }
                 });
             }
         } catch (error) {
