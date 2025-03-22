@@ -19,7 +19,7 @@ updateThemeToggleIcon(savedTheme);
 themeToggle?.addEventListener('click', () => {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
+
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeToggleIcon(newTheme);
@@ -31,7 +31,7 @@ function updateThemeToggleIcon(theme) {
     if (icon) {
         icon.className = theme === 'dark' ? 'icon moon' : 'icon sun';
     }
-    
+
     // Update card colors based on theme
     const cards = document.querySelectorAll('.timeline-card');
     cards.forEach((card, index) => {
@@ -99,8 +99,6 @@ let myTimeline = [];
 let myCoins = 2;
 let isMyTurn = false;
 let player = null;
-let activeBets = [];
-let hasBetThisTurn = false;
 
 // Initialize Plyr
 document.addEventListener('DOMContentLoaded', function () {
@@ -264,24 +262,18 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
 // Join Game Room
 function joinGameRoom(roomId, username) {
     socket.emit('joinRoom', { roomId, username });
-    
+
     // Hide welcome elements
     document.getElementById('welcome-screen').classList.add('hidden');
     document.querySelector('.ui.header.massive.animated').classList.add('hidden');
     document.querySelector('.game-instructions').classList.add('hidden');
-    
+
     // Show game room
     document.getElementById('game-room').classList.remove('hidden');
     document.getElementById('room-id-display').textContent = roomId;
 
-    // Initialize host controls
     if (isHost) {
-        const hostControls = document.getElementById('host-controls');
-        if (hostControls) {
-            hostControls.classList.remove('hidden');
-            // Initialize dropdowns
-            $('.ui.dropdown').dropdown();
-        }
+        document.getElementById('host-controls').classList.remove('hidden');
     }
 }
 
@@ -466,18 +458,8 @@ function handleCardPlacement(song) {
     document.getElementById('preview-artist').textContent = '???';
     document.getElementById('preview-album').textContent = 'Album: ???';
 
-    // Show bet button if player has coins and hasn't bet yet
-    if (myCoins >= 1 && !hasBetThisTurn) {
-        const betButton = document.createElement('button');
-        betButton.className = 'ui primary button';
-        betButton.id = 'place-bet-btn';
-        betButton.textContent = 'Place Bet (1 coin)';
-        betButton.onclick = showBetModal;
-        document.getElementById('card-preview').appendChild(betButton);
-    } else {
-        // If player has already bet or doesn't want to bet, show placement buttons
-        updatePlacementButtons();
-    }
+    // Update placement buttons based on timeline
+    updatePlacementButtons();
 
     // Handle YouTube video
     const videoId = getYouTubeId(song.link_or_file);
@@ -538,30 +520,6 @@ function handleCardPlacement(song) {
 
     // Show placement UI
     document.getElementById('card-preview').classList.remove('hidden');
-
-    // Setup placement buttons
-    document.getElementById('place-before').onclick = () => confirmPlacement('before');
-    document.getElementById('place-after').onclick = () => confirmPlacement('after');
-}
-
-// Show bet modal
-function showBetModal() {
-    if (!currentSong || hasBetThisTurn || myCoins < 1) return;
-
-    // Use the existing bet modal from the HTML
-    const betModal = $('.bet-modal');
-    
-    // Clear any previous values
-    $('#guess-artist').val('');
-    $('#guess-song').val('');
-
-    // Show the modal
-    betModal.modal({
-        onHide: function() {
-            // If player cancels bet, show placement buttons
-            updatePlacementButtons();
-        }
-    }).modal('show');
 }
 
 // Update placement buttons based on timeline
@@ -585,10 +543,13 @@ function updatePlacementButtons() {
         for (let i = 0; i < sortedTimeline.length; i++) {
             const currentCard = sortedTimeline[i];
             const nextCard = sortedTimeline[i + 1];
+            const br = document.createElement('br');
+            intermediateContainer.appendChild(br);
 
             // For the last card or when there's a gap in years between cards
-            if (!nextCard || currentCard.songId.release_year < nextCard.songId.release_year) {
+            if (!nextCard) {
                 const afterButton = document.createElement('button');
+
                 afterButton.className = 'ui button blue';
                 afterButton.textContent = `Place after ${currentCard.songId.release_year}`;
                 afterButton.onclick = () => confirmPlacement('after', i);
@@ -695,14 +656,38 @@ socket.on('roomJoined', (room) => {
     updatePlayersList(room.players);
 });
 
-socket.on('gameStarted', ({ currentPlayer, timeLimit, gameState }) => {
+socket.on('gameStarted', ({ currentPlayer, gameState }) => {
     document.getElementById('waiting-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
 
     // Update game state
     if (gameState) {
         document.getElementById('current-player').textContent = currentPlayer;
-        startTurnTimer(timeLimit);
+
+        // Show admin controls if host
+        if (isHost) {
+            document.getElementById('admin-turn-controls').classList.remove('hidden');
+
+            // Initialize coin management dropdown
+            const coinPlayerSelect = document.getElementById('coin-player');
+            coinPlayerSelect.innerHTML = '';
+            gameState.players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.socketId;
+                option.textContent = `${p.username} (🪙: ${p.coins})`;
+                coinPlayerSelect.appendChild(option);
+            });
+
+            // Initialize winner selection dropdown
+            const winnerSelect = document.getElementById('winner-player');
+            winnerSelect.innerHTML = '';
+            gameState.players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.socketId;
+                option.textContent = p.username;
+                winnerSelect.appendChild(option);
+            });
+        }
 
         // Update all players' data
         if (gameState.players) {
@@ -719,6 +704,17 @@ socket.on('gameStarted', ({ currentPlayer, timeLimit, gameState }) => {
     initializeGame(currentRoom);
 });
 
+// Add event listener for declare winner button
+document.getElementById('declare-winner-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        const winnerSocketId = document.getElementById('winner-player').value;
+        socket.emit('declareWinner', {
+            roomId: currentRoom.roomId,
+            winnerSocketId
+        });
+    }
+});
+
 // Handle individual player data updates
 socket.on('playerData', ({ timeline, coins }) => {
     myTimeline = timeline;
@@ -727,98 +723,177 @@ socket.on('playerData', ({ timeline, coins }) => {
     renderTimeline();
 });
 
-socket.on('gameStateUpdated', ({ gameState, players }) => {
+// Coin management event handlers
+document.getElementById('add-coin-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        const selectedPlayer = document.getElementById('coin-player').value;
+        socket.emit('manageCoin', {
+            roomId: currentRoom.roomId,
+            playerSocketId: selectedPlayer,
+            action: 'add'
+        });
+    }
+});
+
+document.getElementById('remove-coin-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        const selectedPlayer = document.getElementById('coin-player').value;
+        socket.emit('manageCoin', {
+            roomId: currentRoom.roomId,
+            playerSocketId: selectedPlayer,
+            action: 'remove'
+        });
+    }
+});
+
+socket.on('gameStateUpdated', async ({ gameState, players }) => {
     // Update room state
     if (currentRoom) {
         currentRoom.gameState = gameState;
         currentRoom.players = players;
 
-        // Update UI
-        updatePlayersList(players);
-        const player = players.find(p => p.socketId === mySocketId);
-        if (player) {
-            myTimeline = player.timeline;
-            myCoins = player.coins;
-            updateCoinsDisplay();
-            renderTimeline();
+        try {
+            // Get populated player data
+            const response = await fetch(`/api/rooms/${currentRoom.roomId}/players`);
+            const populatedPlayers = await response.json();
+
+            // Update UI with populated data
+            updatePlayersList(populatedPlayers);
+            const player = populatedPlayers.find(p => p.socketId === mySocketId);
+            if (player) {
+                myTimeline = player.timeline;
+                myCoins = player.coins;
+                updateCoinsDisplay();
+                renderTimeline();
+            }
+
+            // Update admin dropdowns if host
+            if (isHost) {
+                // Update coin management dropdown
+                const coinPlayerSelect = document.getElementById('coin-player');
+                coinPlayerSelect.innerHTML = '';
+                players.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.socketId;
+                    option.textContent = `${p.username} (🪙: ${p.coins})`;
+                    coinPlayerSelect.appendChild(option);
+                });
+
+                // Update winner selection dropdown
+                const winnerSelect = document.getElementById('winner-player');
+                winnerSelect.innerHTML = '';
+                players.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.socketId;
+                    option.textContent = p.username;
+                    winnerSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching populated player data:', error);
         }
     }
+});
+
+socket.on('coinUpdated', ({ playerSocketId, coins, username }) => {
+    // Update coin display in player list
+    const playerItem = document.querySelector(`[data-player-id="${playerSocketId}"]`);
+    if (playerItem) {
+        const coinSpan = playerItem.querySelector('.coin-count');
+        if (coinSpan) {
+            coinSpan.textContent = coins;
+        }
+    }
+
+    // Update my coins if I'm the player
+    if (playerSocketId === mySocketId) {
+        myCoins = coins;
+        updateCoinsDisplay();
+    }
+
+    // Show notification
+    Swal.fire({
+        title: 'Coins Updated',
+        text: `${username}'s coins: ${coins}`,
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+    });
 });
 
 socket.on('playerJoined', ({ username, socketId }) => {
     const playerItem = document.createElement('div');
     playerItem.className = 'item';
-    playerItem.textContent = username;
+    playerItem.setAttribute('data-player-id', socketId);
+
     if (socketId === currentRoom.host) {
         playerItem.classList.add('host-player');
     }
+
+    // Add username and coins display (new players start with 2 coins)
+    playerItem.innerHTML = `
+        ${username} 
+        <span class="coin-count" style="float: right;">🪙 2</span>
+    `;
+
     document.getElementById('players-list').appendChild(playerItem);
-});
 
-// Turn timer handling
-let turnTimer = null;
+    // Update admin dropdowns if host
+    if (isHost) {
+        // Update coin management dropdown
+        const coinPlayerSelect = document.getElementById('coin-player');
+        const coinOption = document.createElement('option');
+        coinOption.value = socketId;
+        coinOption.textContent = `${username} (🪙: 2)`;
+        coinPlayerSelect.appendChild(coinOption);
 
-function startTurnTimer(seconds) {
-    clearInterval(turnTimer);
-    const timerDisplay = document.getElementById('turn-timer');
-    let timeLeft = seconds;
-
-    function updateTimer() {
-        timerDisplay.textContent = `${timeLeft}s`;
-        if (timeLeft <= 10) {
-            timerDisplay.style.color = 'red';
-            createTimerBeep();
-        }
-        timeLeft--;
-
-        if (timeLeft < 0) {
-            clearInterval(turnTimer);
-        }
+        // Update winner selection dropdown
+        const winnerSelect = document.getElementById('winner-player');
+        const winnerOption = document.createElement('option');
+        winnerOption.value = socketId;
+        winnerOption.textContent = username;
+        winnerSelect.appendChild(winnerOption);
     }
+});
 
-    updateTimer();
-    turnTimer = setInterval(updateTimer, 1000);
-}
-
-socket.on('turnUpdate', ({ currentPlayer, timeLimit }) => {
+// Turn control handling
+socket.on('turnUpdate', ({ currentPlayer }) => {
     document.getElementById('current-player').textContent = currentPlayer;
-    document.getElementById('turn-timer').style.color = '';
-    startTurnTimer(timeLimit);
+    if (isHost) {
+        document.getElementById('admin-turn-controls').classList.remove('hidden');
+    }
 });
 
-// Admin turn control buttons
-document.getElementById('skip-turn-btn')?.addEventListener('click', () => {
-    if (!isHost || !currentRoom) return;
-    socket.emit('skipTurn', { roomId: currentRoom.roomId });
-});
-
-document.getElementById('next-turn-btn')?.addEventListener('click', () => {
-    if (!isHost || !currentRoom) return;
-    socket.emit('nextTurn', { roomId: currentRoom.roomId });
-});
-
-socket.on('turnStart', ({ playerId, playerName, timeLimit }) => {
+socket.on('turnStart', ({ playerId, playerName }) => {
     isMyTurn = playerId === mySocketId;
     document.getElementById('turn-actions').classList.toggle('hidden', !isMyTurn);
     document.getElementById('current-player').textContent =
         isMyTurn ? 'Your Turn' : `${playerName}'s Turn`;
 
-    // Reset and start turn timer
-    document.getElementById('turn-timer').style.color = '';
-    startTurnTimer(timeLimit);
+    // Show admin controls if host
+    if (isHost) {
+        document.getElementById('admin-turn-controls').classList.remove('hidden');
+    }
 
-    // Reset states for new turn
+    // Reset song state and unlock cards at the start of turn
     currentSong = null;
-    hasBetThisTurn = false;
     unlockCardSlots();
-    
-    // Clear active bets display
-    activeBets = [];
-    document.getElementById('active-bets').classList.add('hidden');
-    document.getElementById('bets-list').innerHTML = '';
 });
 
-socket.on('turnTimeout', async () => {
+// Add event listeners for admin controls
+document.getElementById('skip-turn-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        socket.emit('skipTurn', { roomId: currentRoom.roomId });
+    }
+});
+
+document.getElementById('next-turn-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        socket.emit('nextTurn', { roomId: currentRoom.roomId });
+    }
+});
+
+socket.on('turnSkipped', async () => {
     if (isMyTurn) {
         try {
             await Swal.fire({
@@ -835,13 +910,13 @@ socket.on('turnTimeout', async () => {
                             margin-bottom: 20px;
                             text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
                             font-size: 2em;
-                        ">Time Recommendation</h2>
+                        ">Time's Up!</h2>
                         <div style="
                             font-size: 1.5em;
                             color: #ffcc80;
                             margin: 10px 0;
                             text-shadow: 0 0 5px rgba(255, 165, 0, 0.3);
-                        ">Please finish your turn soon</div>
+                        ">Your turn has ended</div>
                     </div>
                 `,
                 background: 'transparent',
@@ -855,6 +930,8 @@ socket.on('turnTimeout', async () => {
         } catch (error) {
             console.error('Error showing alert:', error);
         }
+        document.getElementById('card-preview').classList.add('hidden');
+        currentSong = null;
     }
 });
 
@@ -943,13 +1020,18 @@ socket.on('playerTimelineUpdate', ({ playerId, timeline }) => {
     // Update the timeline for other players
     const playerElement = document.querySelector(`[data-player-id="${playerId}"]`);
     if (playerElement) {
-        const timelineContainer = playerElement.querySelector('.player-timeline');
-        timelineContainer.innerHTML = '';
-        const sortedTimeline = sortTimelineByYear(timeline);
-        sortedTimeline.forEach(card => {
-            const cardElement = createCardElement(card);
-            timelineContainer.appendChild(cardElement);
-        });
+        try {
+            const timelineContainer = playerElement.querySelector('.player-timeline');
+            timelineContainer.innerHTML = '';
+            const sortedTimeline = sortTimelineByYear(timeline);
+            sortedTimeline.forEach(card => {
+                const cardElement = createCardElement(card);
+                timelineContainer.appendChild(cardElement);
+            });
+        } catch (error) {
+           // console.error('Error updating player timeline:', error);
+        }
+
     }
 });
 
@@ -960,11 +1042,8 @@ socket.on('stopPlaying', () => {
     }
 });
 
-socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer, song }) => {
-    // Update current player display
-    document.getElementById('current-player').textContent = 
-        nextPlayer.socketId === mySocketId ? 'Your Turn' : `${nextPlayer.username}'s Turn`;
-    
+socket.on('placementResult', async ({ correct, socketId, playerName, song }) => {
+    // Don't update current player or unlock slots - wait for admin to trigger next turn
     if (song) {
         try {
             if (socketId === mySocketId) {
@@ -972,11 +1051,11 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                 document.getElementById('preview-name').textContent = song.name;
                 document.getElementById('preview-artist').textContent = song.artist;
                 document.getElementById('preview-album').textContent = `Album: ${song.album || 'N/A'}`;
-                
+
                 // Wait for 1 second to show the song details
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            
+
             if (correct) {
                 // Show success alert to all players
                 await Swal.fire({
@@ -1024,7 +1103,7 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                         popup: 'animated fadeIn'
                     }
                 });
-                
+
                 if (socketId === mySocketId) {
                     showConfetti();
                 }
@@ -1032,7 +1111,7 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                 if (socketId === mySocketId) {
                     createErrorSound();
                 }
-                
+
                 // Show error alert to all players
                 await Swal.fire({
                     html: `
@@ -1091,38 +1170,88 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
         currentSong = null;
         document.getElementById('card-preview').classList.add('hidden');
 
-        // Unlock card slots for next turn
-        const cardSlots = document.querySelectorAll('.card-slot');
-        cardSlots.forEach(slot => {
-            slot.classList.remove('disabled');
-            slot.style.pointerEvents = 'auto';
-        });
+        // Keep card slots locked until admin triggers next turn
     }
 });
 
 // Game end handling
-socket.on('gameWon', ({ winner, scores }) => {
-    clearInterval(turnTimer);
-    const scoresList = document.getElementById('final-scores');
-    scoresList.innerHTML = '';
-
+socket.on('gameWon', async ({ winner, scores }) => {
     // Sort scores in descending order
     scores.sort((a, b) => b.score - a.score);
 
-    scores.forEach((player, index) => {
-        const item = document.createElement('div');
-        item.className = 'item';
-        const place = index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-        item.innerHTML = `
-            <div class="content">
-                <div class="header">${place} ${player.username}</div>
-                <div class="description">Score: ${player.score}</div>
+    // Find winner's username
+    const winnerPlayer = scores.find(p => p.socketId === winner);
+    if (!winnerPlayer) return;
+
+    // Create scores HTML
+    const scoresHtml = scores.map((player, index) => {
+        const place = index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎮';
+        return `
+            <div style="
+                margin: 10px 0;
+                padding: 10px;
+                border-radius: 5px;
+                background: ${index === 0 ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+                ${index === 0 ? 'border: 1px solid #ffd700;' : ''}
+            ">
+                <div style="
+                    font-size: ${index === 0 ? '1.4em' : '1.2em'};
+                    color: ${index === 0 ? '#ffd700' : '#ffffff'};
+                    margin-bottom: 5px;
+                ">${place} ${player.username}</div>
+                <div style="
+                    color: ${index === 0 ? '#ffd700' : '#88ccff'};
+                    font-size: 0.9em;
+                ">Score: ${player.score}</div>
             </div>
         `;
-        scoresList.appendChild(item);
+    }).join('');
+
+    // Show victory alert
+    await Swal.fire({
+        html: `
+            <div style="
+                background: linear-gradient(135deg, #162D4D, #1a4580);
+                padding: 20px;
+                border-radius: 10px;
+                border: 2px solid #ffd700;
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            ">
+                <h2 style="
+                    color: #ffd700;
+                    margin-bottom: 20px;
+                    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+                    font-size: 2em;
+                ">Game Over!</h2>
+                <div style="
+                    font-size: 1.5em;
+                    color: #ffffff;
+                    margin: 20px 0;
+                    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+                ">${winnerPlayer.username} Wins!</div>
+                <div style="
+                    margin-top: 20px;
+                    text-align: left;
+                ">${scoresHtml}</div>
+            </div>
+        `,
+        background: 'transparent',
+        backdrop: 'rgba(10, 25, 41, 0.95)',
+        showConfirmButton: true,
+        confirmButtonText: 'Play Again',
+        allowOutsideClick: false,
+        customClass: {
+            popup: 'animated fadeIn',
+            confirmButton: 'ui primary button'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            location.reload();
+        }
     });
 
-    $('.game-over.modal').modal('show');
+    // Show confetti for everyone
+    showConfetti();
 });
 
 socket.on('suddenDeath', ({ newCardsToWin }) => {
@@ -1133,16 +1262,16 @@ socket.on('suddenDeath', ({ newCardsToWin }) => {
 // Play again handling
 document.getElementById('play-again')?.addEventListener('click', () => {
     $('.game-over.modal').modal('hide');
-    
+
     // Show welcome elements
     document.querySelector('.ui.header.massive.animated').classList.remove('hidden');
     document.querySelector('.game-instructions').classList.remove('hidden');
     document.getElementById('welcome-screen').classList.remove('hidden');
-    
+
     // Hide game elements
     document.getElementById('game-room').classList.add('hidden');
     document.getElementById('game-screen').classList.add('hidden');
-    
+
     // Reset game state
     myTimeline = [];
     myCoins = 2;
@@ -1167,13 +1296,20 @@ function updatePlayersList(players) {
     players.forEach(player => {
         const playerItem = document.createElement('div');
         playerItem.className = 'item';
+        playerItem.setAttribute('data-player-id', player.socketId);
+
         if (player.socketId === currentRoom.host) {
             playerItem.classList.add('host-player');
         }
         if (player.socketId === mySocketId) {
             playerItem.classList.add('current-player');
         }
-        playerItem.textContent = player.username;
+
+        // Add username and coins display
+        playerItem.innerHTML = `
+            ${player.username} 
+            <span class="coin-count" style="float: right;">🪙 ${player.coins}</span>
+        `;
         list.appendChild(playerItem);
     });
 
@@ -1184,95 +1320,43 @@ function updatePlayersList(players) {
 
 // Bet handling
 document.getElementById('bet-coin-btn')?.addEventListener('click', () => {
-    if (myCoins >= 1 && !hasBetThisTurn && currentSong) {
+    if (myCoins >= 1) {
         $('.bet-modal').modal('show');
     }
 });
 
 document.getElementById('submit-guess')?.addEventListener('click', () => {
-    if (!currentSong) return;
-    
     const artist = document.getElementById('guess-artist').value;
     const song = document.getElementById('guess-song').value;
 
-    if (!artist || !song) return;
+    if (!artist || !song) {
+        Swal.fire({
+            title: 'Missing Information',
+            text: 'Please enter both artist and song name',
+            icon: 'warning',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
 
-    myCoins--;
-    updateCoinsDisplay();
-    hasBetThisTurn = true;
-
-    const playerName = currentRoom.players.find(p => p.socketId === mySocketId)?.username;
-
-    socket.emit('placeBet', {
+    const username = currentRoom.players.find(p => p.socketId === mySocketId)?.username;
+    socket.emit('submitGuess', {
         roomId: currentRoom.roomId,
-        socketId: mySocketId,
-        bet: { 
-            artist, 
-            song,
-            songId: currentSong._id,
-            playerName
-        }
+        guess: { artist, song },
+        username
     });
 
-    // Show bet info to all players
-    socket.emit('betNotification', {
-        roomId: currentRoom.roomId,
-        playerName,
-        bet: { artist, song }
-    });
-
+    // Clear form and close modal
+    document.getElementById('guess-artist').value = '';
+    document.getElementById('guess-song').value = '';
     $('.bet-modal').modal('hide');
-    
-    // Show placement buttons after betting
-    updatePlacementButtons();
 });
 
-// Handle new bets
-socket.on('betPlaced', ({ bet, playerName }) => {
-    activeBets.push(bet);
-    
-    // Show active bets section
-    const activeBetsSection = document.getElementById('active-bets');
-    activeBetsSection.classList.remove('hidden');
-    
-    // Add bet to the list
-    const betsList = document.getElementById('bets-list');
-    const betItem = document.createElement('div');
-    betItem.className = 'item';
-    betItem.innerHTML = `
-        <div class="content">
-            <div class="header">${playerName}'s Bet</div>
-            <div class="description">
-                Song: ${bet.song}<br>
-                Artist: ${bet.artist}
-            </div>
-        </div>
-    `;
-    betsList.appendChild(betItem);
-});
-
-// Handle bet validation for admin
-socket.on('betValidation', ({ playerId, bet, playerName }) => {
-    if (isHost) {
-        document.getElementById('validation-content').innerHTML = `
-            <p><strong>${playerName}'s Bet:</strong></p>
-            <p>Artist: ${bet.artist}</p>
-            <p>Song: ${bet.song}</p>
-        `;
-        $('.admin-validation').modal('show');
-    }
-});
-
-// Handle bet result
-socket.on('betResult', ({ correct, playerId, playerName, coins }) => {
-    if (playerId === mySocketId) {
-        myCoins = coins;
-        updateCoinsDisplay();
-    }
-    
+// Handle guess result
+socket.on('guessResult', ({ correct }) => {
     Swal.fire({
-        title: correct ? 'Bet Won! 🎉' : 'Bet Lost 😢',
-        text: `${playerName} ${correct ? 'won' : 'lost'} their bet!`,
+        title: correct ? 'Correct Guess!' : 'Incorrect Guess',
+        text: correct ? 'The admin can now assign you coins!' : 'Better luck next time!',
         icon: correct ? 'success' : 'error',
         timer: 2000,
         showConfirmButton: false
@@ -1280,35 +1364,89 @@ socket.on('betResult', ({ correct, playerId, playerName, coins }) => {
 });
 
 // Host validation handling
-socket.on('guessValidation', ({ playerId, guess }) => {
-    if (isHost) {
-        document.getElementById('validation-content').innerHTML = `
-            <p><strong>Player Guess:</strong></p>
-            <p>Artist: ${guess.artist}</p>
-            <p>Song: ${guess.song}</p>
-        `;
-        $('.admin-validation').modal('show');
+// Guess handling
+let currentGuesses = [];
+
+function clearGuesses() {
+    currentGuesses = [];
+    const guessesList = document.getElementById('guesses-list');
+    const guessSection = document.getElementById('guess-section');
+
+    if (!guessesList || !guessSection) return;
+
+    guessesList.innerHTML = '';
+    guessSection.classList.add('hidden');
+}
+
+function renderGuesses() {
+    const guessesList = document.getElementById('guesses-list');
+    const guessSection = document.getElementById('guess-section');
+
+    if (!guessesList || !guessSection) return;
+
+    guessesList.innerHTML = '';
+
+    if (currentGuesses.length > 0) {
+        guessSection.classList.remove('hidden');
+        currentGuesses.forEach(guess => {
+            if (!guess || !guess.username || !guess.guess) return;
+
+            const guessItem = document.createElement('div');
+            guessItem.className = 'item';
+            guessItem.innerHTML = `
+                <div class="content">
+                    <div class="header">${guess.username}</div>
+                    <div class="description">
+                        Artist: ${guess.guess.artist || 'N/A'}<br>
+                        Song: ${guess.guess.song || 'N/A'}
+                    </div>
+                </div>
+            `;
+            guessesList.appendChild(guessItem);
+        });
+    } else {
+        guessSection.classList.add('hidden');
     }
+}
+
+socket.on('guessValidation', ({ playerId, guess, username }) => {
+    if (!isHost) return;
+
+    const validationPlayer = document.getElementById('validation-player');
+    const validationArtist = document.getElementById('validation-artist');
+    const validationSong = document.getElementById('validation-song');
+
+    if (!validationPlayer || !validationArtist || !validationSong) return;
+
+    validationPlayer.textContent = username || 'Unknown Player';
+    validationArtist.textContent = guess?.artist || 'N/A';
+    validationSong.textContent = guess?.song || 'N/A';
+
+    $('.admin-validation').modal('show');
 });
 
-// Bet validation buttons
-document.getElementById('validate-bet-correct')?.addEventListener('click', () => {
-    if (!isHost || !currentRoom) return;
-    socket.emit('validateGuess', {
-        roomId: currentRoom.roomId,
-        correct: true
-    });
+// Handle new guesses
+socket.on('newGuess', ({ username, guess }) => {
+    currentGuesses.push({ username, guess });
+    renderGuesses();
 });
 
-document.getElementById('validate-bet-incorrect')?.addEventListener('click', () => {
-    if (!isHost || !currentRoom) return;
-    socket.emit('validateGuess', {
-        roomId: currentRoom.roomId,
-        correct: false
-    });
+// Clear guesses on turn change
+socket.on('turnStart', ({ playerId, playerName }) => {
+    clearGuesses();
+    isMyTurn = playerId === mySocketId;
+    document.getElementById('turn-actions').classList.toggle('hidden', !isMyTurn);
+    document.getElementById('current-player').textContent =
+        isMyTurn ? 'Your Turn' : `${playerName}'s Turn`;
+
+    if (isHost) {
+        document.getElementById('admin-turn-controls').classList.remove('hidden');
+    }
+
+    currentSong = null;
+    unlockCardSlots();
 });
 
-// Legacy validation modal buttons
 document.querySelector('.approve-guess')?.addEventListener('click', () => {
     socket.emit('validateGuess', {
         roomId: currentRoom.roomId,

@@ -118,20 +118,26 @@ html(lang="en")
                                                 option(value="5") 5 Cards
                                                 option(value="7") 7 Cards
                                                 option(value="10") 10 Cards
-                                        .ui.buttons.fluid
-                                            button#start-game-btn.ui.primary.button Start Game
-                                            button#kick-player-btn.ui.button.red.disabled Kick Player
+                                        button#start-game-btn.ui.primary.button Start Game
+                                        button#kick-player-btn.ui.button.red.disabled Kick Player
                                     .ui.divider
-                                    h4.ui.header Turn Controls
-                                    .ui.buttons.fluid
-                                        button#skip-turn-btn.ui.button.yellow Skip Turn
-                                        button#next-turn-btn.ui.button.green Next Turn
+                                    h4.ui.header Coin Management
+                                    .ui.form#coin-management
+                                        .field
+                                            label Select Player
+                                            select#coin-player.ui.dropdown
+                                        .field
+                                            .ui.buttons
+                                                button#add-coin-btn.ui.button.green Add Coin
+                                                button#remove-coin-btn.ui.button.red Remove Coin
                                     .ui.divider
-                                    h4.ui.header Bet Validation
-                                    .ui.buttons.fluid
-                                        button#validate-bet-correct.ui.button.green Correct Bet
-                                        button#validate-bet-incorrect.ui.button.red Incorrect Bet
-                                    .ui.divider
+                                    h4.ui.header Game Winner
+                                    .ui.form#winner-management
+                                        .field
+                                            label Select Winner
+                                            select#winner-player.ui.dropdown
+                                        .field
+                                            button#declare-winner-btn.ui.button.green.fluid Declare Winner
                                     .validation-queue.hidden
                                         h5 Pending Validations: 
                                             span#pending-count 0
@@ -149,6 +155,9 @@ html(lang="en")
                                     .player-area
                                         h3.ui.header Your Timeline
                                         .my-timeline#timeline.ui.cards
+                                        #guess-section.ui.segment.hidden
+                                            h4.ui.header Current Guesses
+                                            .ui.divided.list#guesses-list
                                         h3.ui.header Other Players' Timelines
                                         #other-players-timelines.ui.segments
                                         .controls
@@ -163,9 +172,9 @@ html(lang="en")
                                                 .eight.wide.column
                                                     h4 Current Turn: 
                                                         span#current-player
-                                                .eight.wide.column.right.aligned
-                                                    h4 Time Left: 
-                                                        span#turn-timer 60s
+                                                .eight.wide.column.right.aligned#admin-turn-controls.hidden
+                                                    button.ui.button.blue#skip-turn-btn Skip Turn
+                                                    button.ui.button.green#next-turn-btn Next Turn
 
                                         #turn-actions.hidden
                                             #card-preview.ui.segment.hidden
@@ -179,13 +188,10 @@ html(lang="en")
                                                 .plyr__video-embed#player
                                                     iframe(src="" allow="autoplay; fullscreen; picture-in-picture", allowfullscreen)
                                                 .placement-options
-                                                    button.ui.button.blue#place-before Place Before
+                                                    //button.ui.button.blue#place-before Place Before
                                                     #intermediate-positions.ui.buttons
-                                                    button.ui.button.blue#place-after Place After
-                                                    button.ui.button.yellow#bet-coin-btn Bet (1🪙)
-                                            #active-bets.ui.segment.hidden
-                                                h4.ui.header Active Bets
-                                                .ui.list#bets-list
+                                                    //button.ui.button.blue#place-after Place After
+                                                    button.ui.button.yellow#bet-coin-btn Guess Song (1🪙)
                                             .ui.segment
                                                 h3.ui.header Available Cards
                                                 #card-grid.ui.cards
@@ -193,7 +199,7 @@ html(lang="en")
 
 
                                 .ui.modal.bet-modal
-                                    .header Place Your Bet (1🪙)
+                                    .header Guess Artist/Song (1🪙)
                                     .content
                                         .ui.form
                                             .field
@@ -208,7 +214,17 @@ html(lang="en")
 
                                 .ui.modal.admin-validation
                                     .header Validate Guess
-                                    .content#validation-content
+                                    #validation-content.content
+                                        .ui.form
+                                            .field
+                                                label Player
+                                                p#validation-player
+                                            .field
+                                                label Artist
+                                                p#validation-artist
+                                            .field
+                                                label Song
+                                                p#validation-song
                                     .actions
                                         .ui.red.button.reject-guess ❌ Incorrect
                                         .ui.green.button.approve-guess ✅ Correct

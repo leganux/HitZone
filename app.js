@@ -36,6 +36,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/songs', songRoutes);
 app.use('/api/rooms', roomRoutes);
 
+// Get populated player data
+app.get('/api/rooms/:roomId/players', async (req, res) => {
+    try {
+        const room = await Room.findOne({ roomId: req.params.roomId })
+            .populate({
+                path: 'players.timeline.songId',
+                model: 'Song'
+            });
+        
+        if (!room) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
+        
+        res.json(room.players);
+    } catch (error) {
+        console.error('Error fetching populated player data:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Main route
 app.get('/', (req, res) => {
     res.render('index');
@@ -65,7 +85,10 @@ io.on('connection', (socket) => {
     socket.on('selectCard', async ({ roomId }) => {
         try {
             const room = await Room.findOne({ roomId })
-                .populate('players.timeline.songId');
+                .populate({
+                    path: 'players.timeline.songId',
+                    model: 'Song'
+                });
             if (!room || !room.gameState.isActive) return;
 
             const currentPlayerIndex = room.gameState.currentTurn % room.players.length;
@@ -93,7 +116,10 @@ io.on('connection', (socket) => {
     socket.on('placementDecision', async ({ roomId, position, songId }) => {
         try {
             const room = await Room.findOne({ roomId })
-                .populate('players.timeline.songId');
+                .populate({
+                    path: 'players.timeline.songId',
+                    model: 'Song'
+                });
             if (!room) return;
 
             const player = room.players.find(p => p.socketId === socket.id);
@@ -142,7 +168,10 @@ io.on('connection', (socket) => {
 
                 // Get fully populated room data
                 const populatedRoom = await Room.findOne({ roomId })
-                    .populate('players.timeline.songId');
+                    .populate({
+                        path: 'players.timeline.songId',
+                        model: 'Song'
+                    });
                 const populatedPlayer = populatedRoom.players.find(p => p.socketId === socket.id);
                 
                 // Emit timeline update to all players with complete song data
@@ -151,116 +180,27 @@ io.on('connection', (socket) => {
                     timeline: populatedPlayer.timeline
                 });
                 
-                // Check win condition
-                if (player.timeline.length >= room.gameState.cardsToWin) {
-                    if (checkSuddenDeath(room)) {
-                        // Handle sudden death
-                        room = await handleSuddenDeath(room);
-                        io.to(roomId).emit('suddenDeath', {
-                            newCardsToWin: room.gameState.cardsToWin
-                        });
-                    } else {
-                        // Calculate final scores
-                        const scores = room.players.map(p => ({
-                            socketId: p.socketId,
-                            username: p.username,
-                            score: calculateScore(p.timeline)
-                        }));
-                        
-                        io.to(roomId).emit('gameWon', { 
-                            winner: socket.id,
-                            scores: scores
-                        });
-                        turnManager.clearTimer(roomId);
-                        return;
-                    }
-                }
             }
 
             // Stop YouTube player for all players
             io.to(roomId).emit('stopPlaying');
 
-            // Move to next turn
-            await room.startNewTurn();
-            turnManager.startTurnTimer(roomId);
-
-            // Get next player
-            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
-            const nextPlayer = room.players[nextPlayerIndex];
-
-            // Notify players
             // Get current player's username
             const currentPlayer = room.players.find(p => p.socketId === socket.id);
             
+            // Notify players of placement result, but don't advance turn
             io.to(roomId).emit('placementResult', { 
                 correct: isCorrect, 
                 socketId: socket.id,
                 playerName: currentPlayer.username,
-                song: song,  // Include the song data in the response
-                nextPlayer: {
-                    socketId: nextPlayer.socketId,
-                    username: nextPlayer.username
-                }
-            });
-            io.to(roomId).emit('turnStart', { 
-                playerId: nextPlayer.socketId,
-                playerName: nextPlayer.username,
-                timeLimit: room.gameState.turnTimeLimit
+                song: song  // Include the song data in the response
             });
         } catch (error) {
             socket.emit('error', error.message);
         }
     });
 
-    // Admin turn controls
-    socket.on('skipTurn', async ({ roomId }) => {
-        try {
-            const room = await Room.findOne({ roomId });
-            if (!room || room.host !== socket.id) return;
-
-            // Move to next turn
-            await room.startNewTurn();
-            turnManager.startTurnTimer(roomId);
-
-            // Get next player
-            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
-            const nextPlayer = room.players[nextPlayerIndex];
-
-            io.to(roomId).emit('turnStart', {
-                playerId: nextPlayer.socketId,
-                playerName: nextPlayer.username,
-                timeLimit: room.gameState.turnTimeLimit
-            });
-        } catch (error) {
-            socket.emit('error', error.message);
-        }
-    });
-
-    socket.on('nextTurn', async ({ roomId }) => {
-        try {
-            const room = await Room.findOne({ roomId });
-            if (!room || room.host !== socket.id) return;
-
-            // Move to next turn
-            await room.startNewTurn();
-            turnManager.startTurnTimer(roomId);
-
-            // Get next player
-            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
-            const nextPlayer = room.players[nextPlayerIndex];
-
-            io.to(roomId).emit('turnStart', {
-                playerId: nextPlayer.socketId,
-                playerName: nextPlayer.username,
-                timeLimit: room.gameState.turnTimeLimit
-            });
-        } catch (error) {
-            socket.emit('error', error.message);
-        }
-    });
-
-    // Betting system
-    socket.on('placeBet', async ({ roomId, bet }) => {
+    socket.on('submitGuess', async ({ roomId, guess, username }) => {
         try {
             const room = await Room.findOne({ roomId });
             if (!room) return;
@@ -268,17 +208,19 @@ io.on('connection', (socket) => {
             const player = room.players.find(p => p.socketId === socket.id);
             if (!player || player.coins < 1) return;
 
-            // Notify all players about the bet
-            io.to(roomId).emit('betPlaced', {
-                bet,
-                playerName: player.username
-            });
+           
+            await room.save();
+
+            // Broadcast the guess to all players
+            io.to(roomId).emit('newGuess', { username, guess });
+
+         
 
             // Notify host for validation
-            socket.to(room.host).emit('betValidation', {
+            socket.to(room.host).emit('guessValidation', {
                 playerId: socket.id,
-                bet,
-                playerName: player.username
+                guess,
+                username
             });
         } catch (error) {
             socket.emit('error', error.message);
@@ -290,19 +232,43 @@ io.on('connection', (socket) => {
             const room = await Room.findOne({ roomId });
             if (!room || room.host !== socket.id) return;
 
-            // Find the player with an active bet
-            const playerWithBet = room.players.find(p => room.hasActiveBet(p.socketId));
-            if (!playerWithBet) return;
+            // Just notify about the validation result
+            io.to(roomId).emit('guessResult', {
+                correct
+            });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
 
-            // Resolve the bet
-            await room.resolveBet(playerWithBet.socketId, correct);
+    // Handle coin management
+    socket.on('manageCoin', async ({ roomId, playerSocketId, action }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
 
-            // Notify all players about the bet result
-            io.to(roomId).emit('betResult', {
-                correct,
-                playerId: playerWithBet.socketId,
-                playerName: playerWithBet.username,
-                coins: playerWithBet.coins
+            const player = room.players.find(p => p.socketId === playerSocketId);
+            if (!player) return;
+
+            if (action === 'add') {
+                player.coins++;
+            } else if (action === 'remove' && player.coins > 0) {
+                player.coins--;
+            }
+
+            await room.save();
+
+            // Notify all players about the coin update
+            io.to(roomId).emit('coinUpdated', {
+                playerSocketId: player.socketId,
+                coins: player.coins,
+                username: player.username
+            });
+
+            // Update game state for all players
+            io.to(roomId).emit('gameStateUpdated', {
+                gameState: room.gameState,
+                players: room.players
             });
         } catch (error) {
             socket.emit('error', error.message);
@@ -315,6 +281,80 @@ io.on('connection', (socket) => {
         try {
             // Broadcast the song to all other players in the room
             socket.to(roomId).emit('playSyncedSong', { song });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    // Handle admin turn controls
+    socket.on('skipTurn', async ({ roomId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            // Move to next turn
+            await room.startNewTurn();
+
+            // Get next player
+            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
+            const nextPlayer = room.players[nextPlayerIndex];
+
+            // Notify players
+            io.to(roomId).emit('turnSkipped');
+            io.to(roomId).emit('turnStart', { 
+                playerId: nextPlayer.socketId,
+                playerName: nextPlayer.username
+            });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    // Handle winner declaration
+    socket.on('declareWinner', async ({ roomId, winnerSocketId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            const winner = room.players.find(p => p.socketId === winnerSocketId);
+            if (!winner) return;
+
+            // Calculate final scores
+            const scores = room.players.map(p => ({
+                socketId: p.socketId,
+                username: p.username,
+                score: calculateScore(p.timeline)
+            }));
+
+            // Notify all players about the winner
+            io.to(roomId).emit('gameWon', { 
+                winner: winnerSocketId,
+                scores: scores
+            });
+
+            turnManager.clearTimer(roomId);
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    socket.on('nextTurn', async ({ roomId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            // Move to next turn
+            await room.startNewTurn();
+
+            // Get next player
+            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
+            const nextPlayer = room.players[nextPlayerIndex];
+
+            // Notify players
+            io.to(roomId).emit('turnStart', { 
+                playerId: nextPlayer.socketId,
+                playerName: nextPlayer.username
+            });
         } catch (error) {
             socket.emit('error', error.message);
         }
