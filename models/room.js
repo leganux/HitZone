@@ -7,7 +7,7 @@ const roomSchema = new mongoose.Schema({
         socketId: String,
         username: String,
         timeline: [{
-            songId: { type: mongoose.Schema.Types.ObjectId, ref: 'Song' },
+            songId: { type: mongoose.Schema.Types.ObjectId, ref: 'Song', populate: true },
             position: Number,
             isBase: { type: Boolean, default: false },
             isLocked: { type: Boolean, default: false }
@@ -18,7 +18,7 @@ const roomSchema = new mongoose.Schema({
     disconnectedPlayers: [{
         username: String,
         timeline: [{
-            songId: { type: mongoose.Schema.Types.ObjectId, ref: 'Song' },
+            songId: { type: mongoose.Schema.Types.ObjectId, ref: 'Song', populate: true },
             position: Number,
             isBase: Boolean,
             isLocked: Boolean
@@ -30,7 +30,7 @@ const roomSchema = new mongoose.Schema({
         isActive: { type: Boolean, default: false },
         currentTurn: { type: Number, default: 0 },
         cardsToWin: { type: Number, default: 5 },
-        availableCards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
+        availableCards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song', populate: true }],
         turnTimeLimit: { type: Number, default: 60 }, // seconds
         lastTurnStarted: { type: Date }
     },

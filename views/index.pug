@@ -155,6 +155,9 @@ html(lang="en")
                                     .player-area
                                         h3.ui.header Your Timeline
                                         .my-timeline#timeline.ui.cards
+                                        #guess-section.ui.segment.hidden
+                                            h4.ui.header Current Guesses
+                                            .ui.divided.list#guesses-list
                                         h3.ui.header Other Players' Timelines
                                         #other-players-timelines.ui.segments
                                         .controls
@@ -211,7 +214,17 @@ html(lang="en")
 
                                 .ui.modal.admin-validation
                                     .header Validate Guess
-                                    .content#validation-content
+                                    #validation-content.content
+                                        .ui.form
+                                            .field
+                                                label Player
+                                                p#validation-player
+                                            .field
+                                                label Artist
+                                                p#validation-artist
+                                            .field
+                                                label Song
+                                                p#validation-song
                                     .actions
                                         .ui.red.button.reject-guess ❌ Incorrect
                                         .ui.green.button.approve-guess ✅ Correct

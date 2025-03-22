@@ -247,6 +247,46 @@ body {
     width: 100%;
 }
 
+/* Guess Section */
+#guess-section {
+    margin: 20px 0;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--accent-secondary);
+    box-shadow: var(--neon-glow);
+    padding: 15px;
+    border-radius: 12px;
+}
+
+#guess-section .header {
+    color: var(--accent-secondary);
+    margin-bottom: 15px;
+    text-shadow: var(--neon-glow);
+}
+
+#guesses-list .item {
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--card-border);
+    transition: all 0.3s ease;
+}
+
+#guesses-list .item:hover {
+    transform: translateX(5px);
+    box-shadow: var(--neon-glow);
+}
+
+#guesses-list .item .header {
+    color: var(--accent-primary);
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+#guesses-list .item .description {
+    color: var(--text-secondary);
+}
+
 /* Timeline Area */
 .my-timeline {
     background: var(--timeline-bg);

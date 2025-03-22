@@ -746,43 +746,51 @@ document.getElementById('remove-coin-btn')?.addEventListener('click', () => {
     }
 });
 
-socket.on('gameStateUpdated', ({ gameState, players }) => {
+socket.on('gameStateUpdated', async ({ gameState, players }) => {
     // Update room state
     if (currentRoom) {
         currentRoom.gameState = gameState;
         currentRoom.players = players;
 
-        // Update UI
-        updatePlayersList(players);
-        const player = players.find(p => p.socketId === mySocketId);
-        if (player) {
-            myTimeline = player.timeline;
-            myCoins = player.coins;
-            updateCoinsDisplay();
-            renderTimeline();
-        }
+        try {
+            // Get populated player data
+            const response = await fetch(`/api/rooms/${currentRoom.roomId}/players`);
+            const populatedPlayers = await response.json();
 
-        // Update admin dropdowns if host
-        if (isHost) {
-            // Update coin management dropdown
-            const coinPlayerSelect = document.getElementById('coin-player');
-            coinPlayerSelect.innerHTML = '';
-            players.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p.socketId;
-                option.textContent = `${p.username} (🪙: ${p.coins})`;
-                coinPlayerSelect.appendChild(option);
-            });
+            // Update UI with populated data
+            updatePlayersList(populatedPlayers);
+            const player = populatedPlayers.find(p => p.socketId === mySocketId);
+            if (player) {
+                myTimeline = player.timeline;
+                myCoins = player.coins;
+                updateCoinsDisplay();
+                renderTimeline();
+            }
 
-            // Update winner selection dropdown
-            const winnerSelect = document.getElementById('winner-player');
-            winnerSelect.innerHTML = '';
-            players.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p.socketId;
-                option.textContent = p.username;
-                winnerSelect.appendChild(option);
-            });
+            // Update admin dropdowns if host
+            if (isHost) {
+                // Update coin management dropdown
+                const coinPlayerSelect = document.getElementById('coin-player');
+                coinPlayerSelect.innerHTML = '';
+                players.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.socketId;
+                    option.textContent = `${p.username} (🪙: ${p.coins})`;
+                    coinPlayerSelect.appendChild(option);
+                });
+
+                // Update winner selection dropdown
+                const winnerSelect = document.getElementById('winner-player');
+                winnerSelect.innerHTML = '';
+                players.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.socketId;
+                    option.textContent = p.username;
+                    winnerSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching populated player data:', error);
         }
     }
 });
@@ -1012,13 +1020,18 @@ socket.on('playerTimelineUpdate', ({ playerId, timeline }) => {
     // Update the timeline for other players
     const playerElement = document.querySelector(`[data-player-id="${playerId}"]`);
     if (playerElement) {
-        const timelineContainer = playerElement.querySelector('.player-timeline');
-        timelineContainer.innerHTML = '';
-        const sortedTimeline = sortTimelineByYear(timeline);
-        sortedTimeline.forEach(card => {
-            const cardElement = createCardElement(card);
-            timelineContainer.appendChild(cardElement);
-        });
+        try {
+            const timelineContainer = playerElement.querySelector('.player-timeline');
+            timelineContainer.innerHTML = '';
+            const sortedTimeline = sortTimelineByYear(timeline);
+            sortedTimeline.forEach(card => {
+                const cardElement = createCardElement(card);
+                timelineContainer.appendChild(cardElement);
+            });
+        } catch (error) {
+           // console.error('Error updating player timeline:', error);
+        }
+
     }
 });
 
@@ -1316,25 +1329,122 @@ document.getElementById('submit-guess')?.addEventListener('click', () => {
     const artist = document.getElementById('guess-artist').value;
     const song = document.getElementById('guess-song').value;
 
+    if (!artist || !song) {
+        Swal.fire({
+            title: 'Missing Information',
+            text: 'Please enter both artist and song name',
+            icon: 'warning',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    const username = currentRoom.players.find(p => p.socketId === mySocketId)?.username;
     socket.emit('submitGuess', {
         roomId: currentRoom.roomId,
-        socketId: mySocketId,
-        guess: { artist, song }
+        guess: { artist, song },
+        username
     });
 
+    // Clear form and close modal
+    document.getElementById('guess-artist').value = '';
+    document.getElementById('guess-song').value = '';
     $('.bet-modal').modal('hide');
 });
 
+// Handle guess result
+socket.on('guessResult', ({ correct }) => {
+    Swal.fire({
+        title: correct ? 'Correct Guess!' : 'Incorrect Guess',
+        text: correct ? 'The admin can now assign you coins!' : 'Better luck next time!',
+        icon: correct ? 'success' : 'error',
+        timer: 2000,
+        showConfirmButton: false
+    });
+});
+
 // Host validation handling
-socket.on('guessValidation', ({ playerId, guess }) => {
-    if (isHost) {
-        document.getElementById('validation-content').innerHTML = `
-            <p><strong>Player Guess:</strong></p>
-            <p>Artist: ${guess.artist}</p>
-            <p>Song: ${guess.song}</p>
-        `;
-        $('.admin-validation').modal('show');
+// Guess handling
+let currentGuesses = [];
+
+function clearGuesses() {
+    currentGuesses = [];
+    const guessesList = document.getElementById('guesses-list');
+    const guessSection = document.getElementById('guess-section');
+
+    if (!guessesList || !guessSection) return;
+
+    guessesList.innerHTML = '';
+    guessSection.classList.add('hidden');
+}
+
+function renderGuesses() {
+    const guessesList = document.getElementById('guesses-list');
+    const guessSection = document.getElementById('guess-section');
+
+    if (!guessesList || !guessSection) return;
+
+    guessesList.innerHTML = '';
+
+    if (currentGuesses.length > 0) {
+        guessSection.classList.remove('hidden');
+        currentGuesses.forEach(guess => {
+            if (!guess || !guess.username || !guess.guess) return;
+
+            const guessItem = document.createElement('div');
+            guessItem.className = 'item';
+            guessItem.innerHTML = `
+                <div class="content">
+                    <div class="header">${guess.username}</div>
+                    <div class="description">
+                        Artist: ${guess.guess.artist || 'N/A'}<br>
+                        Song: ${guess.guess.song || 'N/A'}
+                    </div>
+                </div>
+            `;
+            guessesList.appendChild(guessItem);
+        });
+    } else {
+        guessSection.classList.add('hidden');
     }
+}
+
+socket.on('guessValidation', ({ playerId, guess, username }) => {
+    if (!isHost) return;
+
+    const validationPlayer = document.getElementById('validation-player');
+    const validationArtist = document.getElementById('validation-artist');
+    const validationSong = document.getElementById('validation-song');
+
+    if (!validationPlayer || !validationArtist || !validationSong) return;
+
+    validationPlayer.textContent = username || 'Unknown Player';
+    validationArtist.textContent = guess?.artist || 'N/A';
+    validationSong.textContent = guess?.song || 'N/A';
+
+    $('.admin-validation').modal('show');
+});
+
+// Handle new guesses
+socket.on('newGuess', ({ username, guess }) => {
+    currentGuesses.push({ username, guess });
+    renderGuesses();
+});
+
+// Clear guesses on turn change
+socket.on('turnStart', ({ playerId, playerName }) => {
+    clearGuesses();
+    isMyTurn = playerId === mySocketId;
+    document.getElementById('turn-actions').classList.toggle('hidden', !isMyTurn);
+    document.getElementById('current-player').textContent =
+        isMyTurn ? 'Your Turn' : `${playerName}'s Turn`;
+
+    if (isHost) {
+        document.getElementById('admin-turn-controls').classList.remove('hidden');
+    }
+
+    currentSong = null;
+    unlockCardSlots();
 });
 
 document.querySelector('.approve-guess')?.addEventListener('click', () => {

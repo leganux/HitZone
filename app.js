@@ -36,6 +36,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/songs', songRoutes);
 app.use('/api/rooms', roomRoutes);
 
+// Get populated player data
+app.get('/api/rooms/:roomId/players', async (req, res) => {
+    try {
+        const room = await Room.findOne({ roomId: req.params.roomId })
+            .populate({
+                path: 'players.timeline.songId',
+                model: 'Song'
+            });
+        
+        if (!room) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
+        
+        res.json(room.players);
+    } catch (error) {
+        console.error('Error fetching populated player data:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Main route
 app.get('/', (req, res) => {
     res.render('index');
@@ -65,7 +85,10 @@ io.on('connection', (socket) => {
     socket.on('selectCard', async ({ roomId }) => {
         try {
             const room = await Room.findOne({ roomId })
-                .populate('players.timeline.songId');
+                .populate({
+                    path: 'players.timeline.songId',
+                    model: 'Song'
+                });
             if (!room || !room.gameState.isActive) return;
 
             const currentPlayerIndex = room.gameState.currentTurn % room.players.length;
@@ -93,7 +116,10 @@ io.on('connection', (socket) => {
     socket.on('placementDecision', async ({ roomId, position, songId }) => {
         try {
             const room = await Room.findOne({ roomId })
-                .populate('players.timeline.songId');
+                .populate({
+                    path: 'players.timeline.songId',
+                    model: 'Song'
+                });
             if (!room) return;
 
             const player = room.players.find(p => p.socketId === socket.id);
@@ -142,7 +168,10 @@ io.on('connection', (socket) => {
 
                 // Get fully populated room data
                 const populatedRoom = await Room.findOne({ roomId })
-                    .populate('players.timeline.songId');
+                    .populate({
+                        path: 'players.timeline.songId',
+                        model: 'Song'
+                    });
                 const populatedPlayer = populatedRoom.players.find(p => p.socketId === socket.id);
                 
                 // Emit timeline update to all players with complete song data
@@ -171,7 +200,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('submitGuess', async ({ roomId, guess }) => {
+    socket.on('submitGuess', async ({ roomId, guess, username }) => {
         try {
             const room = await Room.findOne({ roomId });
             if (!room) return;
@@ -179,10 +208,19 @@ io.on('connection', (socket) => {
             const player = room.players.find(p => p.socketId === socket.id);
             if (!player || player.coins < 1) return;
 
+           
+            await room.save();
+
+            // Broadcast the guess to all players
+            io.to(roomId).emit('newGuess', { username, guess });
+
+         
+
             // Notify host for validation
             socket.to(room.host).emit('guessValidation', {
                 playerId: socket.id,
-                guess
+                guess,
+                username
             });
         } catch (error) {
             socket.emit('error', error.message);
@@ -194,26 +232,10 @@ io.on('connection', (socket) => {
             const room = await Room.findOne({ roomId });
             if (!room || room.host !== socket.id) return;
 
-            const player = room.players.find(p => p.socketId === socket.id);
-            if (!player) return;
-
-            if (correct) {
-                player.coins++;
-                io.to(roomId).emit('guessResult', {
-                    playerId: socket.id,
-                    correct: true,
-                    newCoins: player.coins
-                });
-            } else {
-                player.coins--;
-                io.to(roomId).emit('guessResult', {
-                    playerId: socket.id,
-                    correct: false,
-                    newCoins: player.coins
-                });
-            }
-
-            await room.save();
+            // Just notify about the validation result
+            io.to(roomId).emit('guessResult', {
+                correct
+            });
         } catch (error) {
             socket.emit('error', error.message);
         }
