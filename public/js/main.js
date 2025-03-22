@@ -547,7 +547,7 @@ function updatePlacementButtons() {
             intermediateContainer.appendChild(br);
 
             // For the last card or when there's a gap in years between cards
-            if (!nextCard ) {
+            if (!nextCard) {
                 const afterButton = document.createElement('button');
 
                 afterButton.className = 'ui button blue';
@@ -663,11 +663,11 @@ socket.on('gameStarted', ({ currentPlayer, gameState }) => {
     // Update game state
     if (gameState) {
         document.getElementById('current-player').textContent = currentPlayer;
-        
+
         // Show admin controls if host
         if (isHost) {
             document.getElementById('admin-turn-controls').classList.remove('hidden');
-            
+
             // Initialize coin management dropdown
             const coinPlayerSelect = document.getElementById('coin-player');
             coinPlayerSelect.innerHTML = '';
@@ -817,7 +817,7 @@ socket.on('playerJoined', ({ username, socketId }) => {
     const playerItem = document.createElement('div');
     playerItem.className = 'item';
     playerItem.setAttribute('data-player-id', socketId);
-    
+
     if (socketId === currentRoom.host) {
         playerItem.classList.add('host-player');
     }
@@ -827,7 +827,7 @@ socket.on('playerJoined', ({ username, socketId }) => {
         ${username} 
         <span class="coin-count" style="float: right;">🪙 2</span>
     `;
-    
+
     document.getElementById('players-list').appendChild(playerItem);
 
     // Update admin dropdowns if host
@@ -1156,33 +1156,89 @@ socket.on('placementResult', async ({ correct, socketId, playerName, song }) => 
         }
         currentSong = null;
         document.getElementById('card-preview').classList.add('hidden');
-        
+
         // Keep card slots locked until admin triggers next turn
     }
 });
 
 // Game end handling
-socket.on('gameWon', ({ winner, scores }) => {
-    const scoresList = document.getElementById('final-scores');
-    scoresList.innerHTML = '';
-
+socket.on('gameWon', async ({ winner, scores }) => {
     // Sort scores in descending order
     scores.sort((a, b) => b.score - a.score);
 
-    scores.forEach((player, index) => {
-        const item = document.createElement('div');
-        item.className = 'item';
-        const place = index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-        item.innerHTML = `
-            <div class="content">
-                <div class="header">${place} ${player.username}</div>
-                <div class="description">Score: ${player.score}</div>
+    // Find winner's username
+    const winnerPlayer = scores.find(p => p.socketId === winner);
+    if (!winnerPlayer) return;
+
+    // Create scores HTML
+    const scoresHtml = scores.map((player, index) => {
+        const place = index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎮';
+        return `
+            <div style="
+                margin: 10px 0;
+                padding: 10px;
+                border-radius: 5px;
+                background: ${index === 0 ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+                ${index === 0 ? 'border: 1px solid #ffd700;' : ''}
+            ">
+                <div style="
+                    font-size: ${index === 0 ? '1.4em' : '1.2em'};
+                    color: ${index === 0 ? '#ffd700' : '#ffffff'};
+                    margin-bottom: 5px;
+                ">${place} ${player.username}</div>
+                <div style="
+                    color: ${index === 0 ? '#ffd700' : '#88ccff'};
+                    font-size: 0.9em;
+                ">Score: ${player.score}</div>
             </div>
         `;
-        scoresList.appendChild(item);
+    }).join('');
+
+    // Show victory alert
+    await Swal.fire({
+        html: `
+            <div style="
+                background: linear-gradient(135deg, #162D4D, #1a4580);
+                padding: 20px;
+                border-radius: 10px;
+                border: 2px solid #ffd700;
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            ">
+                <h2 style="
+                    color: #ffd700;
+                    margin-bottom: 20px;
+                    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+                    font-size: 2em;
+                ">Game Over!</h2>
+                <div style="
+                    font-size: 1.5em;
+                    color: #ffffff;
+                    margin: 20px 0;
+                    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+                ">${winnerPlayer.username} Wins!</div>
+                <div style="
+                    margin-top: 20px;
+                    text-align: left;
+                ">${scoresHtml}</div>
+            </div>
+        `,
+        background: 'transparent',
+        backdrop: 'rgba(10, 25, 41, 0.95)',
+        showConfirmButton: true,
+        confirmButtonText: 'Play Again',
+        allowOutsideClick: false,
+        customClass: {
+            popup: 'animated fadeIn',
+            confirmButton: 'ui primary button'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            location.reload();
+        }
     });
 
-    $('.game-over.modal').modal('show');
+    // Show confetti for everyone
+    showConfetti();
 });
 
 socket.on('suddenDeath', ({ newCardsToWin }) => {
@@ -1228,7 +1284,7 @@ function updatePlayersList(players) {
         const playerItem = document.createElement('div');
         playerItem.className = 'item';
         playerItem.setAttribute('data-player-id', player.socketId);
-        
+
         if (player.socketId === currentRoom.host) {
             playerItem.classList.add('host-player');
         }
