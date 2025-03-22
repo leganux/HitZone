@@ -5,7 +5,9 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-const getSongInfoFromAI = async (title) => {
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const getSongInfoFromAI = async (title, retryCount = 0) => {
     try {
         console.log(`🔄 Getting AI analysis for title: "${title}"`);
         const prompt = `Extract song information from this YouTube video title and return it as a JSON object: "${title}"
@@ -48,17 +50,34 @@ const getSongInfoFromAI = async (title) => {
         }`;
 
         console.log('🔄 Sending request to OpenAI...');
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: prompt }],
-        });
+        try {
+            const completion = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages: [{ role: "user", content: prompt }],
+            });
 
-        const response = completion.choices[0].message.content;
-        console.log('✅ Received AI response:', response);
+            const response = completion.choices[0].message.content;
+            console.log('✅ Received AI response:', response);
+            
+            const parsedResponse = JSON.parse(response);
+            console.log('✅ Successfully parsed AI response');
 
-        const parsedResponse = JSON.parse(response);
-        console.log('✅ Successfully parsed AI response');
-        return parsedResponse;
+            // Add delay between requests to avoid rate limits
+            await delay(100);
+
+            return parsedResponse;
+        } catch (error) {
+            if (error.code === 'rate_limit_exceeded') {
+                if (retryCount < 3) {
+                    console.log(`Rate limit hit, retrying in ${(retryCount + 1) * 1000}ms...`);
+                    await delay((retryCount + 1) * 1000);
+                    return getSongInfoFromAI(title, retryCount + 1);
+                }
+                throw new Error('Rate limit exceeded after 3 retries');
+            }
+            throw error;
+        }
+
     } catch (error) {
         console.error('❌ Error getting song info from AI:', error);
         if (error instanceof SyntaxError) {
