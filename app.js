@@ -180,32 +180,15 @@ io.on('connection', (socket) => {
             // Stop YouTube player for all players
             io.to(roomId).emit('stopPlaying');
 
-            // Move to next turn
-            await room.startNewTurn();
-            turnManager.startTurnTimer(roomId);
-
-            // Get next player
-            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
-            const nextPlayer = room.players[nextPlayerIndex];
-
-            // Notify players
             // Get current player's username
             const currentPlayer = room.players.find(p => p.socketId === socket.id);
             
+            // Notify players of placement result, but don't advance turn
             io.to(roomId).emit('placementResult', { 
                 correct: isCorrect, 
                 socketId: socket.id,
                 playerName: currentPlayer.username,
-                song: song,  // Include the song data in the response
-                nextPlayer: {
-                    socketId: nextPlayer.socketId,
-                    username: nextPlayer.username
-                }
-            });
-            io.to(roomId).emit('turnStart', { 
-                playerId: nextPlayer.socketId,
-                playerName: nextPlayer.username,
-                timeLimit: room.gameState.turnTimeLimit
+                song: song  // Include the song data in the response
             });
         } catch (error) {
             socket.emit('error', error.message);
@@ -266,6 +249,52 @@ io.on('connection', (socket) => {
         try {
             // Broadcast the song to all other players in the room
             socket.to(roomId).emit('playSyncedSong', { song });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    // Handle admin turn controls
+    socket.on('skipTurn', async ({ roomId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            // Move to next turn
+            await room.startNewTurn();
+
+            // Get next player
+            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
+            const nextPlayer = room.players[nextPlayerIndex];
+
+            // Notify players
+            io.to(roomId).emit('turnSkipped');
+            io.to(roomId).emit('turnStart', { 
+                playerId: nextPlayer.socketId,
+                playerName: nextPlayer.username
+            });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    socket.on('nextTurn', async ({ roomId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            // Move to next turn
+            await room.startNewTurn();
+
+            // Get next player
+            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
+            const nextPlayer = room.players[nextPlayerIndex];
+
+            // Notify players
+            io.to(roomId).emit('turnStart', { 
+                playerId: nextPlayer.socketId,
+                playerName: nextPlayer.username
+            });
         } catch (error) {
             socket.emit('error', error.message);
         }

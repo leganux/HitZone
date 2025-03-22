@@ -660,14 +660,18 @@ socket.on('roomJoined', (room) => {
     updatePlayersList(room.players);
 });
 
-socket.on('gameStarted', ({ currentPlayer, timeLimit, gameState }) => {
+socket.on('gameStarted', ({ currentPlayer, gameState }) => {
     document.getElementById('waiting-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
 
     // Update game state
     if (gameState) {
         document.getElementById('current-player').textContent = currentPlayer;
-        startTurnTimer(timeLimit);
+        
+        // Show admin controls if host
+        if (isHost) {
+            document.getElementById('admin-turn-controls').classList.remove('hidden');
+        }
 
         // Update all players' data
         if (gameState.players) {
@@ -720,53 +724,44 @@ socket.on('playerJoined', ({ username, socketId }) => {
     document.getElementById('players-list').appendChild(playerItem);
 });
 
-// Turn timer handling
-let turnTimer = null;
-
-function startTurnTimer(seconds) {
-    clearInterval(turnTimer);
-    const timerDisplay = document.getElementById('turn-timer');
-    let timeLeft = seconds;
-
-    function updateTimer() {
-        timerDisplay.textContent = `${timeLeft}s`;
-        if (timeLeft <= 10) {
-            timerDisplay.style.color = 'red';
-            createTimerBeep();
-        }
-        timeLeft--;
-
-        if (timeLeft < 0) {
-            clearInterval(turnTimer);
-        }
-    }
-
-    updateTimer();
-    turnTimer = setInterval(updateTimer, 1000);
-}
-
-socket.on('turnUpdate', ({ currentPlayer, timeLimit }) => {
+// Turn control handling
+socket.on('turnUpdate', ({ currentPlayer }) => {
     document.getElementById('current-player').textContent = currentPlayer;
-    document.getElementById('turn-timer').style.color = '';
-    startTurnTimer(timeLimit);
+    if (isHost) {
+        document.getElementById('admin-turn-controls').classList.remove('hidden');
+    }
 });
 
-socket.on('turnStart', ({ playerId, playerName, timeLimit }) => {
+socket.on('turnStart', ({ playerId, playerName }) => {
     isMyTurn = playerId === mySocketId;
     document.getElementById('turn-actions').classList.toggle('hidden', !isMyTurn);
     document.getElementById('current-player').textContent =
         isMyTurn ? 'Your Turn' : `${playerName}'s Turn`;
 
-    // Reset and start turn timer
-    document.getElementById('turn-timer').style.color = '';
-    startTurnTimer(timeLimit);
+    // Show admin controls if host
+    if (isHost) {
+        document.getElementById('admin-turn-controls').classList.remove('hidden');
+    }
 
     // Reset song state and unlock cards at the start of turn
     currentSong = null;
     unlockCardSlots();
 });
 
-socket.on('turnTimeout', async () => {
+// Add event listeners for admin controls
+document.getElementById('skip-turn-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        socket.emit('skipTurn', { roomId: currentRoom.roomId });
+    }
+});
+
+document.getElementById('next-turn-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        socket.emit('nextTurn', { roomId: currentRoom.roomId });
+    }
+});
+
+socket.on('turnSkipped', async () => {
     if (isMyTurn) {
         try {
             await Swal.fire({
@@ -910,11 +905,8 @@ socket.on('stopPlaying', () => {
     }
 });
 
-socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer, song }) => {
-    // Update current player display
-    document.getElementById('current-player').textContent =
-        nextPlayer.socketId === mySocketId ? 'Your Turn' : `${nextPlayer.username}'s Turn`;
-
+socket.on('placementResult', async ({ correct, socketId, playerName, song }) => {
+    // Don't update current player or unlock slots - wait for admin to trigger next turn
     if (song) {
         try {
             if (socketId === mySocketId) {
@@ -1040,19 +1032,13 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
         }
         currentSong = null;
         document.getElementById('card-preview').classList.add('hidden');
-
-        // Unlock card slots for next turn
-        const cardSlots = document.querySelectorAll('.card-slot');
-        cardSlots.forEach(slot => {
-            slot.classList.remove('disabled');
-            slot.style.pointerEvents = 'auto';
-        });
+        
+        // Keep card slots locked until admin triggers next turn
     }
 });
 
 // Game end handling
 socket.on('gameWon', ({ winner, scores }) => {
-    clearInterval(turnTimer);
     const scoresList = document.getElementById('final-scores');
     scoresList.innerHTML = '';
 
