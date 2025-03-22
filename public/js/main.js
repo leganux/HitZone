@@ -520,10 +520,6 @@ function handleCardPlacement(song) {
 
     // Show placement UI
     document.getElementById('card-preview').classList.remove('hidden');
-
-    // Setup placement buttons
-    document.getElementById('place-before').onclick = () => confirmPlacement('before');
-    document.getElementById('place-after').onclick = () => confirmPlacement('after');
 }
 
 // Update placement buttons based on timeline
@@ -671,6 +667,16 @@ socket.on('gameStarted', ({ currentPlayer, gameState }) => {
         // Show admin controls if host
         if (isHost) {
             document.getElementById('admin-turn-controls').classList.remove('hidden');
+            
+            // Initialize coin management dropdown
+            const coinPlayerSelect = document.getElementById('coin-player');
+            coinPlayerSelect.innerHTML = '';
+            gameState.players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.socketId;
+                option.textContent = `${p.username} (🪙: ${p.coins})`;
+                coinPlayerSelect.appendChild(option);
+            });
         }
 
         // Update all players' data
@@ -696,6 +702,29 @@ socket.on('playerData', ({ timeline, coins }) => {
     renderTimeline();
 });
 
+// Coin management event handlers
+document.getElementById('add-coin-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        const selectedPlayer = document.getElementById('coin-player').value;
+        socket.emit('manageCoin', {
+            roomId: currentRoom.roomId,
+            playerSocketId: selectedPlayer,
+            action: 'add'
+        });
+    }
+});
+
+document.getElementById('remove-coin-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        const selectedPlayer = document.getElementById('coin-player').value;
+        socket.emit('manageCoin', {
+            roomId: currentRoom.roomId,
+            playerSocketId: selectedPlayer,
+            action: 'remove'
+        });
+    }
+});
+
 socket.on('gameStateUpdated', ({ gameState, players }) => {
     // Update room state
     if (currentRoom) {
@@ -711,17 +740,72 @@ socket.on('gameStateUpdated', ({ gameState, players }) => {
             updateCoinsDisplay();
             renderTimeline();
         }
+
+        // Update coin management dropdown if host
+        if (isHost) {
+            const coinPlayerSelect = document.getElementById('coin-player');
+            coinPlayerSelect.innerHTML = '';
+            players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.socketId;
+                option.textContent = `${p.username} (🪙: ${p.coins})`;
+                coinPlayerSelect.appendChild(option);
+            });
+        }
     }
+});
+
+socket.on('coinUpdated', ({ playerSocketId, coins, username }) => {
+    // Update coin display in player list
+    const playerItem = document.querySelector(`[data-player-id="${playerSocketId}"]`);
+    if (playerItem) {
+        const coinSpan = playerItem.querySelector('.coin-count');
+        if (coinSpan) {
+            coinSpan.textContent = coins;
+        }
+    }
+
+    // Update my coins if I'm the player
+    if (playerSocketId === mySocketId) {
+        myCoins = coins;
+        updateCoinsDisplay();
+    }
+
+    // Show notification
+    Swal.fire({
+        title: 'Coins Updated',
+        text: `${username}'s coins: ${coins}`,
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+    });
 });
 
 socket.on('playerJoined', ({ username, socketId }) => {
     const playerItem = document.createElement('div');
     playerItem.className = 'item';
-    playerItem.textContent = username;
+    playerItem.setAttribute('data-player-id', socketId);
+    
     if (socketId === currentRoom.host) {
         playerItem.classList.add('host-player');
     }
+
+    // Add username and coins display (new players start with 2 coins)
+    playerItem.innerHTML = `
+        ${username} 
+        <span class="coin-count" style="float: right;">🪙 2</span>
+    `;
+    
     document.getElementById('players-list').appendChild(playerItem);
+
+    // Update coin management dropdown if host
+    if (isHost) {
+        const coinPlayerSelect = document.getElementById('coin-player');
+        const option = document.createElement('option');
+        option.value = socketId;
+        option.textContent = `${username} (🪙: 2)`;
+        coinPlayerSelect.appendChild(option);
+    }
 });
 
 // Turn control handling
@@ -1103,13 +1187,20 @@ function updatePlayersList(players) {
     players.forEach(player => {
         const playerItem = document.createElement('div');
         playerItem.className = 'item';
+        playerItem.setAttribute('data-player-id', player.socketId);
+        
         if (player.socketId === currentRoom.host) {
             playerItem.classList.add('host-player');
         }
         if (player.socketId === mySocketId) {
             playerItem.classList.add('current-player');
         }
-        playerItem.textContent = player.username;
+
+        // Add username and coins display
+        playerItem.innerHTML = `
+            ${player.username} 
+            <span class="coin-count" style="float: right;">🪙 ${player.coins}</span>
+        `;
         list.appendChild(playerItem);
     });
 

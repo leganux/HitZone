@@ -120,6 +120,16 @@ html(lang="en")
                                                 option(value="10") 10 Cards
                                         button#start-game-btn.ui.primary.button Start Game
                                         button#kick-player-btn.ui.button.red.disabled Kick Player
+                                    .ui.divider
+                                    h4.ui.header Coin Management
+                                    .ui.form#coin-management
+                                        .field
+                                            label Select Player
+                                            select#coin-player.ui.dropdown
+                                        .field
+                                            .ui.buttons(style='flex-direction: column;')
+                                                button#add-coin-btn.ui.button.green Add Coin
+                                                button#remove-coin-btn.ui.button.red Remove Coin
                                     .validation-queue.hidden
                                         h5 Pending Validations: 
                                             span#pending-count 0

@@ -243,6 +243,40 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Handle coin management
+    socket.on('manageCoin', async ({ roomId, playerSocketId, action }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            const player = room.players.find(p => p.socketId === playerSocketId);
+            if (!player) return;
+
+            if (action === 'add') {
+                player.coins++;
+            } else if (action === 'remove' && player.coins > 0) {
+                player.coins--;
+            }
+
+            await room.save();
+
+            // Notify all players about the coin update
+            io.to(roomId).emit('coinUpdated', {
+                playerSocketId: player.socketId,
+                coins: player.coins,
+                username: player.username
+            });
+
+            // Update game state for all players
+            io.to(roomId).emit('gameStateUpdated', {
+                gameState: room.gameState,
+                players: room.players
+            });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
     // Handle disconnection with state persistence
     // Handle song playback synchronization
     socket.on('syncSongPlayback', async ({ roomId, song }) => {
