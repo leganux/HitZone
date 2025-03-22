@@ -127,9 +127,17 @@ html(lang="en")
                                             label Select Player
                                             select#coin-player.ui.dropdown
                                         .field
-                                            .ui.buttons(style='flex-direction: column;')
+                                            .ui.buttons
                                                 button#add-coin-btn.ui.button.green Add Coin
                                                 button#remove-coin-btn.ui.button.red Remove Coin
+                                    .ui.divider
+                                    h4.ui.header Game Winner
+                                    .ui.form#winner-management
+                                        .field
+                                            label Select Winner
+                                            select#winner-player.ui.dropdown
+                                        .field
+                                            button#declare-winner-btn.ui.button.green.fluid Declare Winner
                                     .validation-queue.hidden
                                         h5 Pending Validations: 
                                             span#pending-count 0

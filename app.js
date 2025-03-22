@@ -151,30 +151,6 @@ io.on('connection', (socket) => {
                     timeline: populatedPlayer.timeline
                 });
                 
-                // Check win condition
-                if (player.timeline.length >= room.gameState.cardsToWin) {
-                    if (checkSuddenDeath(room)) {
-                        // Handle sudden death
-                        room = await handleSuddenDeath(room);
-                        io.to(roomId).emit('suddenDeath', {
-                            newCardsToWin: room.gameState.cardsToWin
-                        });
-                    } else {
-                        // Calculate final scores
-                        const scores = room.players.map(p => ({
-                            socketId: p.socketId,
-                            username: p.username,
-                            score: calculateScore(p.timeline)
-                        }));
-                        
-                        io.to(roomId).emit('gameWon', { 
-                            winner: socket.id,
-                            scores: scores
-                        });
-                        turnManager.clearTimer(roomId);
-                        return;
-                    }
-                }
             }
 
             // Stop YouTube player for all players
@@ -307,6 +283,34 @@ io.on('connection', (socket) => {
                 playerId: nextPlayer.socketId,
                 playerName: nextPlayer.username
             });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    // Handle winner declaration
+    socket.on('declareWinner', async ({ roomId, winnerSocketId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            const winner = room.players.find(p => p.socketId === winnerSocketId);
+            if (!winner) return;
+
+            // Calculate final scores
+            const scores = room.players.map(p => ({
+                socketId: p.socketId,
+                username: p.username,
+                score: calculateScore(p.timeline)
+            }));
+
+            // Notify all players about the winner
+            io.to(roomId).emit('gameWon', { 
+                winner: winnerSocketId,
+                scores: scores
+            });
+
+            turnManager.clearTimer(roomId);
         } catch (error) {
             socket.emit('error', error.message);
         }

@@ -677,6 +677,16 @@ socket.on('gameStarted', ({ currentPlayer, gameState }) => {
                 option.textContent = `${p.username} (🪙: ${p.coins})`;
                 coinPlayerSelect.appendChild(option);
             });
+
+            // Initialize winner selection dropdown
+            const winnerSelect = document.getElementById('winner-player');
+            winnerSelect.innerHTML = '';
+            gameState.players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.socketId;
+                option.textContent = p.username;
+                winnerSelect.appendChild(option);
+            });
         }
 
         // Update all players' data
@@ -692,6 +702,17 @@ socket.on('gameStarted', ({ currentPlayer, gameState }) => {
 
     // Initialize game UI
     initializeGame(currentRoom);
+});
+
+// Add event listener for declare winner button
+document.getElementById('declare-winner-btn')?.addEventListener('click', () => {
+    if (isHost && currentRoom) {
+        const winnerSocketId = document.getElementById('winner-player').value;
+        socket.emit('declareWinner', {
+            roomId: currentRoom.roomId,
+            winnerSocketId
+        });
+    }
 });
 
 // Handle individual player data updates
@@ -741,8 +762,9 @@ socket.on('gameStateUpdated', ({ gameState, players }) => {
             renderTimeline();
         }
 
-        // Update coin management dropdown if host
+        // Update admin dropdowns if host
         if (isHost) {
+            // Update coin management dropdown
             const coinPlayerSelect = document.getElementById('coin-player');
             coinPlayerSelect.innerHTML = '';
             players.forEach(p => {
@@ -750,6 +772,16 @@ socket.on('gameStateUpdated', ({ gameState, players }) => {
                 option.value = p.socketId;
                 option.textContent = `${p.username} (🪙: ${p.coins})`;
                 coinPlayerSelect.appendChild(option);
+            });
+
+            // Update winner selection dropdown
+            const winnerSelect = document.getElementById('winner-player');
+            winnerSelect.innerHTML = '';
+            players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.socketId;
+                option.textContent = p.username;
+                winnerSelect.appendChild(option);
             });
         }
     }
@@ -798,13 +830,21 @@ socket.on('playerJoined', ({ username, socketId }) => {
     
     document.getElementById('players-list').appendChild(playerItem);
 
-    // Update coin management dropdown if host
+    // Update admin dropdowns if host
     if (isHost) {
+        // Update coin management dropdown
         const coinPlayerSelect = document.getElementById('coin-player');
-        const option = document.createElement('option');
-        option.value = socketId;
-        option.textContent = `${username} (🪙: 2)`;
-        coinPlayerSelect.appendChild(option);
+        const coinOption = document.createElement('option');
+        coinOption.value = socketId;
+        coinOption.textContent = `${username} (🪙: 2)`;
+        coinPlayerSelect.appendChild(coinOption);
+
+        // Update winner selection dropdown
+        const winnerSelect = document.getElementById('winner-player');
+        const winnerOption = document.createElement('option');
+        winnerOption.value = socketId;
+        winnerOption.textContent = username;
+        winnerSelect.appendChild(winnerOption);
     }
 });
 
