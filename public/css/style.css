@@ -257,7 +257,7 @@ body {
 /* Card Grid */
 #card-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 15px;
     padding: 20px;
     background: var(--bg-tertiary);
@@ -268,7 +268,7 @@ body {
 .card-slot {
     background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     border-radius: 12px;
-    height: 180px;
+    height: 100px;
     display: flex;
     align-items: center;
     justify-content: center;

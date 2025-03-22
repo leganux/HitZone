@@ -262,7 +262,13 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
 // Join Game Room
 function joinGameRoom(roomId, username) {
     socket.emit('joinRoom', { roomId, username });
+    
+    // Hide welcome elements
     document.getElementById('welcome-screen').classList.add('hidden');
+    document.querySelector('.ui.header.massive.animated').classList.add('hidden');
+    document.querySelector('.game-instructions').classList.add('hidden');
+    
+    // Show game room
     document.getElementById('game-room').classList.remove('hidden');
     document.getElementById('room-id-display').textContent = roomId;
 
@@ -408,7 +414,7 @@ function renderCardGrid() {
     const grid = document.getElementById('card-grid');
     grid.innerHTML = '';
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 25; i++) {
         const cardSlot = document.createElement('div');
         cardSlot.className = 'card-slot';
         cardSlot.textContent = '♫';
@@ -1074,8 +1080,17 @@ socket.on('suddenDeath', ({ newCardsToWin }) => {
 // Play again handling
 document.getElementById('play-again')?.addEventListener('click', () => {
     $('.game-over.modal').modal('hide');
-    document.getElementById('waiting-screen').classList.remove('hidden');
+    
+    // Show welcome elements
+    document.querySelector('.ui.header.massive.animated').classList.remove('hidden');
+    document.querySelector('.game-instructions').classList.remove('hidden');
+    document.getElementById('welcome-screen').classList.remove('hidden');
+    
+    // Hide game elements
+    document.getElementById('game-room').classList.add('hidden');
     document.getElementById('game-screen').classList.add('hidden');
+    
+    // Reset game state
     myTimeline = [];
     myCoins = 2;
     updateCoinsDisplay();

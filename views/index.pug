@@ -2,11 +2,11 @@ doctype html
 html(lang="en")
     head
         meta(charset="UTF-8")
-        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
         title HitZone - Music Timeline Game
-        link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.css")
-        link(rel="stylesheet", href="https://cdn.plyr.io/3.7.8/plyr.css")
-        link(rel="stylesheet", href="/css/style.css")
+        link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.css")
+        link(rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css")
+        link(rel="stylesheet" href="/css/style.css")
         script(src="https://code.jquery.com/jquery-3.6.4.min.js")
         script(src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.js")
         script(src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js")
@@ -15,8 +15,8 @@ html(lang="en")
         .ui.container
             h1.ui.header.massive.animated
                 center 
-                    img(src="/images/logo.png", alt="HitZone Logo" style="max-width: 250px")
-            
+                    img(src="/images/logo.png" alt="HitZone Logo" style="max-width: 250px")
+
             .game-instructions
                 .slogan "¡Donde el Ritmo del Tiempo Define al Campeón! 🎵✨"
                 h2 Cómo Jugar
@@ -26,12 +26,12 @@ html(lang="en")
                             i.music.icon
                             | Objetivo
                         p Sé el mejor DJ del tiempo: ¡Coloca las canciones en su año correcto!
-                        
+
                         h3 
                             i.trophy.icon
                             | Cómo Ganar
                         p ¡El primer jugador en conseguir 10 canciones correctas en su línea temporal gana!
-                        
+
                     .eight.wide.column
                         h3 
                             i.play.icon
@@ -64,7 +64,7 @@ html(lang="en")
                                     .ui.form
                                         .field
                                             label Username
-                                            input#create-username(type="text", placeholder="Enter your username")
+                                            input#create-username(type="text" placeholder="Enter your username")
                                         button#create-room-btn.ui.primary.button Create Room
 
                             .column
@@ -73,10 +73,10 @@ html(lang="en")
                                     .ui.form
                                         .field
                                             label Room ID
-                                            input#join-room-id(type="text", placeholder="Enter room ID")
+                                            input#join-room-id(type="text" placeholder="Enter room ID")
                                         .field
                                             label Username
-                                            input#join-username(type="text", placeholder="Enter your username")
+                                            input#join-username(type="text" placeholder="Enter your username")
                                         button#join-room-btn.ui.primary.button Join Room
 
                     .ui.bottom.attached.tab.segment(data-tab="add-song")
@@ -84,19 +84,19 @@ html(lang="en")
                         .ui.form#add-song-form
                             .field
                                 label Song Name
-                                input(type="text", name="name", placeholder="Enter song name", required)
+                                input(type="text" name="name" placeholder="Enter song name", required)
                             .field
                                 label Artist
-                                input(type="text", name="artist", placeholder="Enter artist name", required)
+                                input(type="text" name="artist" placeholder="Enter artist name", required)
                             .field
                                 label Release Year
-                                input(type="number", name="release_year", placeholder="Enter release year", required, min="1900", max="2024")
+                                input(type="number" name="release_year" placeholder="Enter release year", required, min="1900" max="2024")
                             .field
                                 label Album
-                                input(type="text", name="album", placeholder="Enter album name")
+                                input(type="text" name="album" placeholder="Enter album name")
                             .field
                                 label YouTube Link or MP3 URL
-                                input(type="text", name="link_or_file", placeholder="Enter YouTube link or MP3 URL", required)
+                                input(type="text" name="link_or_file" placeholder="Enter YouTube link or MP3 URL", required)
                             .ui.message.hidden#song-message
                             button.ui.primary.button#add-song-btn Add Song
 
@@ -104,6 +104,8 @@ html(lang="en")
                     .ui.grid
                         .four.wide.column
                             .ui.segment
+                                center 
+                                    img(src="/images/logo.png" alt="HitZone Logo" style="max-width: 70px")
                                 h3.ui.header Players
                                 .ui.list#players-list
                                 #host-controls.ui.hidden.room-admin-panel
@@ -142,7 +144,7 @@ html(lang="en")
                                                 span#coin-count 2
                                             button#buy-card-btn.ui.button.green.disabled Buy Card (3🪙)
                                             button#steal-card-btn.ui.button.blue.disabled Steal Card (4🪙)
-                                    
+
                                     .current-turn
                                         #turn-status.ui.message
                                             .ui.grid
@@ -152,7 +154,7 @@ html(lang="en")
                                                 .eight.wide.column.right.aligned
                                                     h4 Time Left: 
                                                         span#turn-timer 60s
-                                        
+
                                         #turn-actions.hidden
                                             #card-preview.ui.segment.hidden
                                                 h4.ui.header Selected Card
@@ -163,7 +165,7 @@ html(lang="en")
                                                         .description
                                                             p#preview-album
                                                 .plyr__video-embed#player
-                                                    iframe(src="", allow="autoplay; fullscreen; picture-in-picture", allowfullscreen)
+                                                    iframe(src="" allow="autoplay; fullscreen; picture-in-picture", allowfullscreen)
                                                 .placement-options
                                                     button.ui.button.blue#place-before Place Before
                                                     #intermediate-positions.ui.buttons
@@ -172,8 +174,8 @@ html(lang="en")
                                             .ui.segment
                                                 h3.ui.header Available Cards
                                                 #card-grid.ui.cards
-                                            
-                                            
+
+
 
                                 .ui.modal.bet-modal
                                     .header Guess Artist/Song (1🪙)
@@ -181,10 +183,10 @@ html(lang="en")
                                         .ui.form
                                             .field
                                                 label Artist
-                                                input#guess-artist(type="text", placeholder="Enter artist name")
+                                                input#guess-artist(type="text" placeholder="Enter artist name")
                                             .field
                                                 label Song
-                                                input#guess-song(type="text", placeholder="Enter song name")
+                                                input#guess-song(type="text" placeholder="Enter song name")
                                     .actions
                                         .ui.button.cancel Cancel
                                         .ui.primary.button#submit-guess Submit
@@ -220,4 +222,4 @@ html(lang="en")
 
         script(src="/socket.io/socket.io.js")
         script(src="/js/animations.js")
-        script(src="/js/main.js", type="module")
+        script(src="/js/main.js" type="module")
