@@ -99,6 +99,8 @@ let myTimeline = [];
 let myCoins = 2;
 let isMyTurn = false;
 let player = null;
+let activeBets = [];
+let hasBetThisTurn = false;
 
 // Initialize Plyr
 document.addEventListener('DOMContentLoaded', function () {
@@ -272,8 +274,14 @@ function joinGameRoom(roomId, username) {
     document.getElementById('game-room').classList.remove('hidden');
     document.getElementById('room-id-display').textContent = roomId;
 
+    // Initialize host controls
     if (isHost) {
-        document.getElementById('host-controls').classList.remove('hidden');
+        const hostControls = document.getElementById('host-controls');
+        if (hostControls) {
+            hostControls.classList.remove('hidden');
+            // Initialize dropdowns
+            $('.ui.dropdown').dropdown();
+        }
     }
 }
 
@@ -458,8 +466,18 @@ function handleCardPlacement(song) {
     document.getElementById('preview-artist').textContent = '???';
     document.getElementById('preview-album').textContent = 'Album: ???';
 
-    // Update placement buttons based on timeline
-    updatePlacementButtons();
+    // Show bet button if player has coins and hasn't bet yet
+    if (myCoins >= 1 && !hasBetThisTurn) {
+        const betButton = document.createElement('button');
+        betButton.className = 'ui primary button';
+        betButton.id = 'place-bet-btn';
+        betButton.textContent = 'Place Bet (1 coin)';
+        betButton.onclick = showBetModal;
+        document.getElementById('card-preview').appendChild(betButton);
+    } else {
+        // If player has already bet or doesn't want to bet, show placement buttons
+        updatePlacementButtons();
+    }
 
     // Handle YouTube video
     const videoId = getYouTubeId(song.link_or_file);
@@ -524,6 +542,26 @@ function handleCardPlacement(song) {
     // Setup placement buttons
     document.getElementById('place-before').onclick = () => confirmPlacement('before');
     document.getElementById('place-after').onclick = () => confirmPlacement('after');
+}
+
+// Show bet modal
+function showBetModal() {
+    if (!currentSong || hasBetThisTurn || myCoins < 1) return;
+
+    // Use the existing bet modal from the HTML
+    const betModal = $('.bet-modal');
+    
+    // Clear any previous values
+    $('#guess-artist').val('');
+    $('#guess-song').val('');
+
+    // Show the modal
+    betModal.modal({
+        onHide: function() {
+            // If player cancels bet, show placement buttons
+            updatePlacementButtons();
+        }
+    }).modal('show');
 }
 
 // Update placement buttons based on timeline
@@ -748,6 +786,17 @@ socket.on('turnUpdate', ({ currentPlayer, timeLimit }) => {
     startTurnTimer(timeLimit);
 });
 
+// Admin turn control buttons
+document.getElementById('skip-turn-btn')?.addEventListener('click', () => {
+    if (!isHost || !currentRoom) return;
+    socket.emit('skipTurn', { roomId: currentRoom.roomId });
+});
+
+document.getElementById('next-turn-btn')?.addEventListener('click', () => {
+    if (!isHost || !currentRoom) return;
+    socket.emit('nextTurn', { roomId: currentRoom.roomId });
+});
+
 socket.on('turnStart', ({ playerId, playerName, timeLimit }) => {
     isMyTurn = playerId === mySocketId;
     document.getElementById('turn-actions').classList.toggle('hidden', !isMyTurn);
@@ -758,9 +807,15 @@ socket.on('turnStart', ({ playerId, playerName, timeLimit }) => {
     document.getElementById('turn-timer').style.color = '';
     startTurnTimer(timeLimit);
 
-    // Reset song state and unlock cards at the start of turn
+    // Reset states for new turn
     currentSong = null;
+    hasBetThisTurn = false;
     unlockCardSlots();
+    
+    // Clear active bets display
+    activeBets = [];
+    document.getElementById('active-bets').classList.add('hidden');
+    document.getElementById('bets-list').innerHTML = '';
 });
 
 socket.on('turnTimeout', async () => {
@@ -780,13 +835,13 @@ socket.on('turnTimeout', async () => {
                             margin-bottom: 20px;
                             text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
                             font-size: 2em;
-                        ">Time's Up!</h2>
+                        ">Time Recommendation</h2>
                         <div style="
                             font-size: 1.5em;
                             color: #ffcc80;
                             margin: 10px 0;
                             text-shadow: 0 0 5px rgba(255, 165, 0, 0.3);
-                        ">Your turn has ended</div>
+                        ">Please finish your turn soon</div>
                     </div>
                 `,
                 background: 'transparent',
@@ -800,8 +855,6 @@ socket.on('turnTimeout', async () => {
         } catch (error) {
             console.error('Error showing alert:', error);
         }
-        document.getElementById('card-preview').classList.add('hidden');
-        currentSong = null;
     }
 });
 
@@ -1131,22 +1184,99 @@ function updatePlayersList(players) {
 
 // Bet handling
 document.getElementById('bet-coin-btn')?.addEventListener('click', () => {
-    if (myCoins >= 1) {
+    if (myCoins >= 1 && !hasBetThisTurn && currentSong) {
         $('.bet-modal').modal('show');
     }
 });
 
 document.getElementById('submit-guess')?.addEventListener('click', () => {
+    if (!currentSong) return;
+    
     const artist = document.getElementById('guess-artist').value;
     const song = document.getElementById('guess-song').value;
 
-    socket.emit('submitGuess', {
+    if (!artist || !song) return;
+
+    myCoins--;
+    updateCoinsDisplay();
+    hasBetThisTurn = true;
+
+    const playerName = currentRoom.players.find(p => p.socketId === mySocketId)?.username;
+
+    socket.emit('placeBet', {
         roomId: currentRoom.roomId,
         socketId: mySocketId,
-        guess: { artist, song }
+        bet: { 
+            artist, 
+            song,
+            songId: currentSong._id,
+            playerName
+        }
+    });
+
+    // Show bet info to all players
+    socket.emit('betNotification', {
+        roomId: currentRoom.roomId,
+        playerName,
+        bet: { artist, song }
     });
 
     $('.bet-modal').modal('hide');
+    
+    // Show placement buttons after betting
+    updatePlacementButtons();
+});
+
+// Handle new bets
+socket.on('betPlaced', ({ bet, playerName }) => {
+    activeBets.push(bet);
+    
+    // Show active bets section
+    const activeBetsSection = document.getElementById('active-bets');
+    activeBetsSection.classList.remove('hidden');
+    
+    // Add bet to the list
+    const betsList = document.getElementById('bets-list');
+    const betItem = document.createElement('div');
+    betItem.className = 'item';
+    betItem.innerHTML = `
+        <div class="content">
+            <div class="header">${playerName}'s Bet</div>
+            <div class="description">
+                Song: ${bet.song}<br>
+                Artist: ${bet.artist}
+            </div>
+        </div>
+    `;
+    betsList.appendChild(betItem);
+});
+
+// Handle bet validation for admin
+socket.on('betValidation', ({ playerId, bet, playerName }) => {
+    if (isHost) {
+        document.getElementById('validation-content').innerHTML = `
+            <p><strong>${playerName}'s Bet:</strong></p>
+            <p>Artist: ${bet.artist}</p>
+            <p>Song: ${bet.song}</p>
+        `;
+        $('.admin-validation').modal('show');
+    }
+});
+
+// Handle bet result
+socket.on('betResult', ({ correct, playerId, playerName, coins }) => {
+    if (playerId === mySocketId) {
+        myCoins = coins;
+        updateCoinsDisplay();
+    }
+    
+    Swal.fire({
+        title: correct ? 'Bet Won! 🎉' : 'Bet Lost 😢',
+        text: `${playerName} ${correct ? 'won' : 'lost'} their bet!`,
+        icon: correct ? 'success' : 'error',
+        timer: 2000,
+        showConfirmButton: false
+    });
 });
 
 // Host validation handling
@@ -1161,6 +1291,24 @@ socket.on('guessValidation', ({ playerId, guess }) => {
     }
 });
 
+// Bet validation buttons
+document.getElementById('validate-bet-correct')?.addEventListener('click', () => {
+    if (!isHost || !currentRoom) return;
+    socket.emit('validateGuess', {
+        roomId: currentRoom.roomId,
+        correct: true
+    });
+});
+
+document.getElementById('validate-bet-incorrect')?.addEventListener('click', () => {
+    if (!isHost || !currentRoom) return;
+    socket.emit('validateGuess', {
+        roomId: currentRoom.roomId,
+        correct: false
+    });
+});
+
+// Legacy validation modal buttons
 document.querySelector('.approve-guess')?.addEventListener('click', () => {
     socket.emit('validateGuess', {
         roomId: currentRoom.roomId,

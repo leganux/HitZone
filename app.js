@@ -212,7 +212,55 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('submitGuess', async ({ roomId, guess }) => {
+    // Admin turn controls
+    socket.on('skipTurn', async ({ roomId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            // Move to next turn
+            await room.startNewTurn();
+            turnManager.startTurnTimer(roomId);
+
+            // Get next player
+            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
+            const nextPlayer = room.players[nextPlayerIndex];
+
+            io.to(roomId).emit('turnStart', {
+                playerId: nextPlayer.socketId,
+                playerName: nextPlayer.username,
+                timeLimit: room.gameState.turnTimeLimit
+            });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    socket.on('nextTurn', async ({ roomId }) => {
+        try {
+            const room = await Room.findOne({ roomId });
+            if (!room || room.host !== socket.id) return;
+
+            // Move to next turn
+            await room.startNewTurn();
+            turnManager.startTurnTimer(roomId);
+
+            // Get next player
+            const nextPlayerIndex = room.gameState.currentTurn % room.players.length;
+            const nextPlayer = room.players[nextPlayerIndex];
+
+            io.to(roomId).emit('turnStart', {
+                playerId: nextPlayer.socketId,
+                playerName: nextPlayer.username,
+                timeLimit: room.gameState.turnTimeLimit
+            });
+        } catch (error) {
+            socket.emit('error', error.message);
+        }
+    });
+
+    // Betting system
+    socket.on('placeBet', async ({ roomId, bet }) => {
         try {
             const room = await Room.findOne({ roomId });
             if (!room) return;
@@ -220,10 +268,17 @@ io.on('connection', (socket) => {
             const player = room.players.find(p => p.socketId === socket.id);
             if (!player || player.coins < 1) return;
 
+            // Notify all players about the bet
+            io.to(roomId).emit('betPlaced', {
+                bet,
+                playerName: player.username
+            });
+
             // Notify host for validation
-            socket.to(room.host).emit('guessValidation', {
+            socket.to(room.host).emit('betValidation', {
                 playerId: socket.id,
-                guess
+                bet,
+                playerName: player.username
             });
         } catch (error) {
             socket.emit('error', error.message);
@@ -235,26 +290,20 @@ io.on('connection', (socket) => {
             const room = await Room.findOne({ roomId });
             if (!room || room.host !== socket.id) return;
 
-            const player = room.players.find(p => p.socketId === socket.id);
-            if (!player) return;
+            // Find the player with an active bet
+            const playerWithBet = room.players.find(p => room.hasActiveBet(p.socketId));
+            if (!playerWithBet) return;
 
-            if (correct) {
-                player.coins++;
-                io.to(roomId).emit('guessResult', {
-                    playerId: socket.id,
-                    correct: true,
-                    newCoins: player.coins
-                });
-            } else {
-                player.coins--;
-                io.to(roomId).emit('guessResult', {
-                    playerId: socket.id,
-                    correct: false,
-                    newCoins: player.coins
-                });
-            }
+            // Resolve the bet
+            await room.resolveBet(playerWithBet.socketId, correct);
 
-            await room.save();
+            // Notify all players about the bet result
+            io.to(roomId).emit('betResult', {
+                correct,
+                playerId: playerWithBet.socketId,
+                playerName: playerWithBet.username,
+                coins: playerWithBet.coins
+            });
         } catch (error) {
             socket.emit('error', error.message);
         }

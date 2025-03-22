@@ -32,7 +32,17 @@ const roomSchema = new mongoose.Schema({
         cardsToWin: { type: Number, default: 5 },
         availableCards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
         turnTimeLimit: { type: Number, default: 60 }, // seconds
-        lastTurnStarted: { type: Date }
+        lastTurnStarted: { type: Date },
+        activeBets: [{
+            playerId: String,
+            playerName: String,
+            songId: { type: mongoose.Schema.Types.ObjectId, ref: 'Song' },
+            bet: {
+                artist: String,
+                song: String
+            },
+            resolved: { type: Boolean, default: false }
+        }]
     },
     maxPlayers: { type: Number, default: 20 },
     createdAt: { type: Date, default: Date.now },
@@ -49,24 +59,75 @@ roomSchema.methods.updateActivity = function() {
 roomSchema.methods.startNewTurn = function() {
     this.gameState.lastTurnStarted = new Date();
     this.gameState.currentTurn++;
+    // Clear active bets when starting new turn
+    this.gameState.activeBets = [];
     return this.save();
 };
 
-// Method to check if turn time limit is exceeded
-roomSchema.methods.isTurnTimeExceeded = function() {
-    if (!this.gameState.lastTurnStarted) return false;
-    const elapsed = (new Date() - this.gameState.lastTurnStarted) / 1000;
-    return elapsed > this.gameState.turnTimeLimit;
+// Turn control methods
+roomSchema.methods.handleAdminTurnControl = function(action) {
+    if (action === 'next') {
+        this.gameState.lastTurnStarted = new Date();
+        this.gameState.currentTurn++;
+        this.gameState.activeBets = [];
+        return this.save();
+    } else if (action === 'skip') {
+        this.gameState.currentTurn++;
+        return this.save();
+    }
+    return null;
 };
 
-// Method to handle turn timeout
-roomSchema.methods.handleTurnTimeout = async function() {
-    if (this.isTurnTimeExceeded()) {
-        await this.startNewTurn();
-        return true;
+// Coin exchange methods
+roomSchema.methods.exchangeCoinsForTurn = function(playerId) {
+    const player = this.players.find(p => p.socketId === playerId);
+    if (player && player.coins >= 4) {
+        player.coins -= 2;
+        return this.save();
     }
-    return false;
+    return null;
 };
+
+roomSchema.methods.canExchangeCoinsForTurn = function(playerId) {
+    const player = this.players.find(p => p.socketId === playerId);
+    return player && player.coins >= 4;
+};
+
+// Betting methods
+roomSchema.methods.addBet = function(playerId, playerName, songId, bet) {
+    this.gameState.activeBets.push({
+        playerId,
+        playerName,
+        songId,
+        bet,
+        resolved: false
+    });
+    return this.save();
+};
+
+// Method to resolve a bet
+roomSchema.methods.resolveBet = function(playerId, correct) {
+    const bet = this.gameState.activeBets.find(b => b.playerId === playerId && !b.resolved);
+    if (bet) {
+        bet.resolved = true;
+        const player = this.players.find(p => p.socketId === playerId);
+        if (player) {
+            if (correct) {
+                player.coins += 2; // Win 2 coins (1 bet + 1 bonus)
+            } else {
+                // Remove card from timeline if bet was incorrect
+                player.timeline = player.timeline.filter(card => !card.songId.equals(bet.songId));
+            }
+        }
+    }
+    return this.save();
+};
+
+// Method to check if player has active bet
+roomSchema.methods.hasActiveBet = function(playerId) {
+    return this.gameState.activeBets.some(bet => bet.playerId === playerId && !bet.resolved);
+};
+
 
 // Method to add a player to the room
 roomSchema.methods.addPlayer = function(socketId, username, isHost = false) {

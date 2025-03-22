@@ -191,43 +191,85 @@ const roomController = {
         }
     },
 
-    // Update room state (for game actions)
-    updateState: async (req, res) => {
-        try {
-            const { roomId } = req.params;
-            const updates = req.body;
-            
-            const room = await Room.findOne({ roomId });
-            if (!room) {
-                return res.status(404).json({ message: 'Room not found' });
-            }
+// Update room state (for game actions)
+updateState: async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const updates = req.body;
+        
+        const room = await Room.findOne({ roomId });
+        if (!room) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
 
-            // Apply updates
-            if (updates.gameState) {
-                Object.assign(room.gameState, updates.gameState);
-            }
-            
-            if (updates.playerUpdates) {
-                updates.playerUpdates.forEach(update => {
-                    room.updatePlayerState(update.socketId, update.changes);
+        // Handle admin turn control
+        if (updates.turnControl) {
+            const result = await room.handleAdminTurnControl(updates.turnControl);
+            if (result) {
+                const io = req.app.get('io');
+                const nextPlayer = room.players[room.gameState.currentTurn % room.players.length];
+                io.to(roomId).emit('turnStart', {
+                    playerId: nextPlayer.socketId,
+                    playerName: nextPlayer.username,
+                    timeLimit: room.gameState.turnTimeLimit
                 });
             }
-
-            await room.updateActivity();
-            await room.save();
-
-            // Get io instance and notify all players about the update
-            const io = req.app.get('io');
-            io.to(roomId).emit('gameStateUpdated', {
-                gameState: room.gameState,
-                players: room.players
-            });
-
-            res.json(room);
-        } catch (error) {
-            res.status(400).json({ message: error.message });
         }
-    },
+
+        // Handle bet validation
+        if (updates.betValidation) {
+            const { playerId, correct } = updates.betValidation;
+            await room.resolveBet(playerId, correct);
+            const player = room.players.find(p => p.socketId === playerId);
+            const io = req.app.get('io');
+            io.to(roomId).emit('betResult', {
+                correct,
+                playerId,
+                playerName: player.username,
+                coins: player.coins
+            });
+        }
+
+        // Handle coin exchange for extra turn
+        if (updates.exchangeCoins) {
+            const result = await room.exchangeCoinsForTurn(updates.exchangeCoins.playerId);
+            if (result) {
+                const io = req.app.get('io');
+                const player = room.players.find(p => p.socketId === updates.exchangeCoins.playerId);
+                io.to(roomId).emit('coinsExchanged', {
+                    playerId: player.socketId,
+                    playerName: player.username,
+                    newCoins: player.coins
+                });
+            }
+        }
+
+        // Apply other updates
+        if (updates.gameState) {
+            Object.assign(room.gameState, updates.gameState);
+        }
+        
+        if (updates.playerUpdates) {
+            updates.playerUpdates.forEach(update => {
+                room.updatePlayerState(update.socketId, update.changes);
+            });
+        }
+
+        await room.updateActivity();
+        await room.save();
+
+        // Get io instance and notify all players about the update
+        const io = req.app.get('io');
+        io.to(roomId).emit('gameStateUpdated', {
+            gameState: room.gameState,
+            players: room.players
+        });
+
+        res.json(room);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+},
 
     // Clean up inactive rooms (called periodically)
     cleanupInactiveRooms: async () => {

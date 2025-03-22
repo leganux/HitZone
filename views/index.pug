@@ -118,8 +118,20 @@ html(lang="en")
                                                 option(value="5") 5 Cards
                                                 option(value="7") 7 Cards
                                                 option(value="10") 10 Cards
-                                        button#start-game-btn.ui.primary.button Start Game
-                                        button#kick-player-btn.ui.button.red.disabled Kick Player
+                                        .ui.buttons.fluid
+                                            button#start-game-btn.ui.primary.button Start Game
+                                            button#kick-player-btn.ui.button.red.disabled Kick Player
+                                    .ui.divider
+                                    h4.ui.header Turn Controls
+                                    .ui.buttons.fluid
+                                        button#skip-turn-btn.ui.button.yellow Skip Turn
+                                        button#next-turn-btn.ui.button.green Next Turn
+                                    .ui.divider
+                                    h4.ui.header Bet Validation
+                                    .ui.buttons.fluid
+                                        button#validate-bet-correct.ui.button.green Correct Bet
+                                        button#validate-bet-incorrect.ui.button.red Incorrect Bet
+                                    .ui.divider
                                     .validation-queue.hidden
                                         h5 Pending Validations: 
                                             span#pending-count 0
@@ -170,7 +182,10 @@ html(lang="en")
                                                     button.ui.button.blue#place-before Place Before
                                                     #intermediate-positions.ui.buttons
                                                     button.ui.button.blue#place-after Place After
-                                                    button.ui.button.yellow#bet-coin-btn Guess Song (1🪙)
+                                                    button.ui.button.yellow#bet-coin-btn Bet (1🪙)
+                                            #active-bets.ui.segment.hidden
+                                                h4.ui.header Active Bets
+                                                .ui.list#bets-list
                                             .ui.segment
                                                 h3.ui.header Available Cards
                                                 #card-grid.ui.cards
@@ -178,7 +193,7 @@ html(lang="en")
 
 
                                 .ui.modal.bet-modal
-                                    .header Guess Artist/Song (1🪙)
+                                    .header Place Your Bet (1🪙)
                                     .content
                                         .ui.form
                                             .field

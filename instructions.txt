@@ -138,3 +138,22 @@ Cancion sonando  backstreetboys - 2000- everybody
 
 Cuando esta sonando una cancion porque el usuario ya escigio una carta el resto de las cartas se deben bloquear  hasta el sigueinte turno
 Al final el algoritmo debera ir ordenando la linea del tiempo pudiendo insertar targetas de forma intermedia 
+
+
+
+
+
+
+Quiero que corrijas la funcionalidad de apostar, para ello el administrador es quien debe controlar los turnos, el tiempo solo estara como recomendacion pero quien dice quien es el siguiente turno es el administrador del room, por lo tanto tendra 2 botones el de skip y el de next turno
+
+
+ de las 2 monedas iniciales que tiene  cada uno de los  usuario si durante su turno antes de pulsar alguno de los botones de after, before or between el usuario esta escuchando la cancion y pulsa el boton de apostar
+
+ a todos los usuarios les llegara la notificacion de que el usuario esta apostando, junto con el titulo de la cancion y el artista que lleno en el modal,
+
+ Este debera permanecer visible en otra pequeña seccion junto con su apuesta,  entonces ahora si podra seleccionar cualquiera de los botones de after o before
+
+ Si  la cancion la coloca en una mala pocicion perde su moneda y su tarjeta, Y si la coloca de forma correcta el administrador tendra un boton para decirdir si el usuario acerto su apuesta o no si la acerto ganara otra moneda + la que aposto en total 2, de lo contrario perdera su moneda
+
+
+ Antes del siegueinte turno  el usuario si tiene mas de 4 monedas podra cambiar 2 de ellas por una nueva oportunidad de juego  y seran retiradas 2 monedas y obtendra otro turno 
