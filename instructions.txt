@@ -157,3 +157,42 @@ Quiero que corrijas la funcionalidad de apostar, para ello el administrador es q
 
 
  Antes del siegueinte turno  el usuario si tiene mas de 4 monedas podra cambiar 2 de ellas por una nueva oportunidad de juego  y seran retiradas 2 monedas y obtendra otro turno 
+
+
+
+
+
+
+
+ en la API crea un nuevo endpoint para que dada una URL de un playlist de youtube  registre en la base de datos todos los videos  de la playlist 
+
+ El usuario va a en viar una playlist por ejemplo  https://www.youtube.com/watch?v=n2sjeulK3hQ&list=RDdOF12aMFVlg&index=5 con ella  el sistema va a usar puppeteer para conectarse a la url de browserless -> https://browserless.leganux.com/ y extraer el contenido de todos los titulos y libks del playlist de la siguiente manera 
+
+ const videos = [...document.querySelectorAll(".ytd-playlist-panel-renderer > #wc-endpoint")];
+
+const videoData = videos.map(video => {
+    const url = video.href || "";
+    const title = video.textContent?.replace(/\s+/g, " ").trim() || "Título no disponible";
+    
+    return { url, title };
+});
+
+console.log(videoData);
+
+
+eso da  como resultado  un arreglo como el siguiente [{"url":"https://www.youtube.com/watch?v=dOF12aMFVlg&list=RDdOF12aMFVlg&index=1&pp=8AUB0gcJCYQBdf06UVJ6","title":"6:00 6:00 Reproduciendo José María Napoleón - Lo Que No Fue No Será/Mientras Llueve/Y Para Qué Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=rm2yz539z3c&list=RDdOF12aMFVlg&index=2&pp=8AUB","title":"5:33 5:33 Reproduciendo ROSY ARANGO - La Llorona #rosyarango #embajadoradelamusicamexicana #diademuertos #catrina ROSY ARANGO"},{"url":"https://www.youtube.com/watch?v=Zto0glZz2hk&list=RDdOF12aMFVlg&index=3&pp=8AUB","title":"3:54 3:54 Reproduciendo José María Napoleón - Pajarillo (En Vivo/Edit Version) ft. Luis Humberto Navejas Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=MboQeARlUWs&list=RDdOF12aMFVlg&index=4&pp=8AUB","title":"▶ 4:48 4:48 Reproduciendo José María Napoleón - Vive (En Vivo) Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=n2sjeulK3hQ&list=RDdOF12aMFVlg&index=5&pp=8AUB","title":"4:02 4:02 Reproduciendo Mijares - Si Me Tenías (Video Oficial) MijaresOficial"},{"url":"https://www.youtube.com/watch?v=odOJXfFcIaA&list=RDdOF12aMFVlg&index=6&pp=8AUB","title":"3:38 3:38 Reproduciendo Adan Jodorowsky feat. León Larregui - Vagabundos de otro mundo Adanowsky"},{"url":"https://www.youtube.com/watch?v=tJOu5ukveiQ&list=RDdOF12aMFVlg&index=7&pp=8AUB","title":"3:19 3:19 Reproduciendo Vicentico - No Te Apartes de Mí (Official Video) Vicentico"},{"url":"https://www.youtube.com/watch?v=ZbxnDaWYl9o&list=RDdOF12aMFVlg&index=8&pp=8AUB","title":"3:59 3:59 Reproduciendo Diego Verdaguer - Volveré [Versión Original] Diego Verdaguer"},{"url":"https://www.youtube.com/watch?v=UM2ByIVBJJE&list=RDdOF12aMFVlg&index=9&pp=8AUB","title":"3:30 3:30 Reproduciendo José María Napoleón - Eres ft. María José Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=X6YYrg_Ril4&list=RDdOF12aMFVlg&index=10&pp=8AUB","title":"6:08 6:08 Reproduciendo José María Napoleón - Ella Se Llamaba Martha/Eres/Nunca Cambies (Medley) Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=glVTv3ceUjo&list=RDdOF12aMFVlg&index=11&pp=8AUB","title":"3:29 3:29 Reproduciendo José María Napoleón - Celos (En Vivo) ft. Mon Laferte Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=Dvy_-rvSeoE&list=RDdOF12aMFVlg&index=12&pp=8AUB","title":"5:29 5:29 Reproduciendo José María Napoleón - 30 Años ft. Beto Zapata (En Vivo) Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=dxWahjuNYw0&list=RDdOF12aMFVlg&index=13&pp=8AUB","title":"4:28 4:28 Reproduciendo José María Napoleón - Después De Tanto Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=lEjZQ57E3uE&list=RDdOF12aMFVlg&index=14&pp=8AUB","title":"4:13 4:13 Reproduciendo Roberto Carlos - Un Gato En La Oscuridad (Un Gato Nel Blu) robertocarlostvVEVO"},{"url":"https://www.youtube.com/watch?v=SP3rSwa9dD0&list=RDdOF12aMFVlg&index=15&pp=8AUB","title":"3:33 3:33 Reproduciendo Candilejas - José Augusto Hachonero Neo"},{"url":"https://www.youtube.com/watch?v=KLZouX5p0vo&list=RDdOF12aMFVlg&index=16&pp=8AUB","title":"3:18 3:18 Reproduciendo Quiero ser tu canción desde principio a fin // Cama y Mesa LETRAS4K"},{"url":"https://www.youtube.com/watch?v=XBA5J0B2Llg&list=RDdOF12aMFVlg&index=17&pp=8AUB","title":"4:06 4:06 Reproduciendo *Y COMO ES ÉL?...* - JOSÉ LUIS PERALES - 1982 (REMASTERIZADO) PRIVADO 80s"},{"url":"https://www.youtube.com/watch?v=FL7ktlvZnH8&list=RDdOF12aMFVlg&index=18&pp=8AUB","title":"3:42 3:42 Reproduciendo Joan Sebastian - Rumores (Letra Oficial) Discos Musart"},{"url":"https://www.youtube.com/watch?v=9F_BRjGi3L8&list=RDdOF12aMFVlg&index=19&pp=8AUB","title":"5:51 5:51 Reproduciendo Vicente Fernández - A Mi Manera (En Vivo)[Un Azteca en el Azteca] vicentefernandez®"},{"url":"https://www.youtube.com/watch?v=ey6_CDBVaHA&list=RDdOF12aMFVlg&index=20&pp=8AUB","title":"2:53 2:53 Reproduciendo ROSY ARANGO | La Sandunga | Colectivo Vivir Hasta Despedirnos #rosyarango #oaxaca #musicamexicana ROSY ARANGO"},{"url":"https://www.youtube.com/watch?v=mg1RuON_QnI&list=RDdOF12aMFVlg&index=21&pp=8AUB","title":"3:21 3:21 Reproduciendo Alberto Vazquez - El Pecador (Visualizador Oficial) Alberto Vazquez"},{"url":"https://www.youtube.com/watch?v=KxUaHTo-3wo&list=RDdOF12aMFVlg&index=22&pp=8AUB","title":"4:26 4:26 Reproduciendo José María Napoleón - Hombre (En Vivo / Edit Version) ft. José María Napoleon Oficial"},{"url":"https://www.youtube.com/watch?v=-apU2sviHCM&list=RDdOF12aMFVlg&index=23&pp=8AUB","title":"6:41 6:41 Reproduciendo Ricardo Arjona - Historia De Taxi (Video) Ricardo Arjona"},{"url":"https://www.youtube.com/watch?v=0mSNnobHcYQ&list=RDdOF12aMFVlg&index=24&pp=8AUB","title":"3:46 3:46 Reproduciendo La 5a Estación - El Sol No Regresa La Quinta Estación"},{"url":"https://www.youtube.com/watch?v=nYnLVWXmRm8&list=RDdOF12aMFVlg&index=25&pp=8AUB","title":"3:52 3:52 Reproduciendo La Oreja de Van Gogh - Rosas (Vídeo Oficial) La Oreja de Van Gogh"},{"url":"https://www.youtube.com/watch?v=cx5qVmtfayA&list=RDdOF12aMFVlg&index=26&pp=8AUB","title":"4:07 4:07 Reproduciendo La Oreja de Van Gogh - La Playa (Official Video) La Oreja de Van Gogh"},{"url":"https://www.youtube.com/watch?v=bmHEXhs1NFQ&list=RDdOF12aMFVlg&index=27&pp=8AUB","title":"4:22 4:22 Reproduciendo Isaac et Nora feat. Natalia Lafourcade - Hasta la Raíz Isaac et Nora"},{"url":"https://www.youtube.com/watch?v=i3ASIYixqUI&list=RDdOF12aMFVlg&index=28&pp=8AUB","title":"6:22 6:22 Reproduciendo La Llorona - Carmen Goett (Official Video) Carmen Goett"},{"url":"https://www.youtube.com/watch?v=3BhxXOGza6Y&list=RDdOF12aMFVlg&index=29&pp=8AUB","title":"5:05 5:05 Reproduciendo Lila Downs - Dios Nunca Muere (En Vivo) Lila Downs"}]
+
+con ese arreglo va a ir recorriendo cada elemento y le va a pedir a openai chatgpt  que investigue  el nombre el artista, el album, el año etc  deveuleva   un json asi  separado artista, album link etc 
+
+
+{
+    name: nombre de la cancion string,
+    release_year:Año en que se publico (numerico obligatorio)
+    artist: nombre del artista string
+    album: nombre del album 
+    link_or_file: guardara la URL de youtube 
+}
+
+al final se debe guardar en la base de datos cada cancion
+
+Configura el .env para  la key de openai 

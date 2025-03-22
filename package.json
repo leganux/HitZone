@@ -18,12 +18,15 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^4.18.2",
-    "mongoose": "^7.0.3",
-    "pug": "^3.0.2",
-    "socket.io": "^4.6.1",
     "fomantic-ui": "^2.9.0",
-    "jquery": "^3.6.0"
+    "jquery": "^3.6.0",
+    "mongoose": "^7.0.3",
+    "openai": "^4.89.0",
+    "pug": "^3.0.2",
+    "puppeteer": "^24.4.0",
+    "socket.io": "^4.6.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -11,6 +12,7 @@ const { TurnManager, validatePlacement, checkSuddenDeath, handleSuddenDeath, cal
 // Routes
 const songRoutes = require('./routes/songRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const playlistRoutes = require('./routes/playlistRoutes');
 
 // Initialize app and turn manager
 const app = express();
@@ -35,6 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes
 app.use('/api/songs', songRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/playlists', playlistRoutes);
 
 // Get populated player data
 app.get('/api/rooms/:roomId/players', async (req, res) => {
