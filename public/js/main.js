@@ -19,7 +19,7 @@ updateThemeToggleIcon(savedTheme);
 themeToggle?.addEventListener('click', () => {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
+
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeToggleIcon(newTheme);
@@ -31,7 +31,7 @@ function updateThemeToggleIcon(theme) {
     if (icon) {
         icon.className = theme === 'dark' ? 'icon moon' : 'icon sun';
     }
-    
+
     // Update card colors based on theme
     const cards = document.querySelectorAll('.timeline-card');
     cards.forEach((card, index) => {
@@ -262,12 +262,12 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
 // Join Game Room
 function joinGameRoom(roomId, username) {
     socket.emit('joinRoom', { roomId, username });
-    
+
     // Hide welcome elements
     document.getElementById('welcome-screen').classList.add('hidden');
     document.querySelector('.ui.header.massive.animated').classList.add('hidden');
     document.querySelector('.game-instructions').classList.add('hidden');
-    
+
     // Show game room
     document.getElementById('game-room').classList.remove('hidden');
     document.getElementById('room-id-display').textContent = roomId;
@@ -547,10 +547,13 @@ function updatePlacementButtons() {
         for (let i = 0; i < sortedTimeline.length; i++) {
             const currentCard = sortedTimeline[i];
             const nextCard = sortedTimeline[i + 1];
+            const br = document.createElement('br');
+            intermediateContainer.appendChild(br);
 
             // For the last card or when there's a gap in years between cards
-            if (!nextCard || currentCard.songId.release_year < nextCard.songId.release_year) {
+            if (!nextCard ) {
                 const afterButton = document.createElement('button');
+
                 afterButton.className = 'ui button blue';
                 afterButton.textContent = `Place after ${currentCard.songId.release_year}`;
                 afterButton.onclick = () => confirmPlacement('after', i);
@@ -909,9 +912,9 @@ socket.on('stopPlaying', () => {
 
 socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer, song }) => {
     // Update current player display
-    document.getElementById('current-player').textContent = 
+    document.getElementById('current-player').textContent =
         nextPlayer.socketId === mySocketId ? 'Your Turn' : `${nextPlayer.username}'s Turn`;
-    
+
     if (song) {
         try {
             if (socketId === mySocketId) {
@@ -919,11 +922,11 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                 document.getElementById('preview-name').textContent = song.name;
                 document.getElementById('preview-artist').textContent = song.artist;
                 document.getElementById('preview-album').textContent = `Album: ${song.album || 'N/A'}`;
-                
+
                 // Wait for 1 second to show the song details
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            
+
             if (correct) {
                 // Show success alert to all players
                 await Swal.fire({
@@ -971,7 +974,7 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                         popup: 'animated fadeIn'
                     }
                 });
-                
+
                 if (socketId === mySocketId) {
                     showConfetti();
                 }
@@ -979,7 +982,7 @@ socket.on('placementResult', async ({ correct, socketId, playerName, nextPlayer,
                 if (socketId === mySocketId) {
                     createErrorSound();
                 }
-                
+
                 // Show error alert to all players
                 await Swal.fire({
                     html: `
@@ -1080,16 +1083,16 @@ socket.on('suddenDeath', ({ newCardsToWin }) => {
 // Play again handling
 document.getElementById('play-again')?.addEventListener('click', () => {
     $('.game-over.modal').modal('hide');
-    
+
     // Show welcome elements
     document.querySelector('.ui.header.massive.animated').classList.remove('hidden');
     document.querySelector('.game-instructions').classList.remove('hidden');
     document.getElementById('welcome-screen').classList.remove('hidden');
-    
+
     // Hide game elements
     document.getElementById('game-room').classList.add('hidden');
     document.getElementById('game-screen').classList.add('hidden');
-    
+
     // Reset game state
     myTimeline = [];
     myCoins = 2;

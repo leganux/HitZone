@@ -43,11 +43,11 @@
     --input-bg: #162D4D;
     --input-border: #00ccff;
     --neon-glow: 0 0 10px rgba(0, 204, 255, 0.5),
-                 0 0 20px rgba(0, 204, 255, 0.3),
-                 0 0 30px rgba(0, 204, 255, 0.1);
+        0 0 20px rgba(0, 204, 255, 0.3),
+        0 0 30px rgba(0, 204, 255, 0.1);
     --neon-green-glow: 0 0 10px rgba(0, 255, 157, 0.5),
-                       0 0 20px rgba(0, 255, 157, 0.3),
-                       0 0 30px rgba(0, 255, 157, 0.1);
+        0 0 20px rgba(0, 255, 157, 0.3),
+        0 0 30px rgba(0, 255, 157, 0.1);
 }
 
 /* General Styles */
@@ -57,6 +57,10 @@ body {
     transition: background-color 0.3s, color 0.3s;
     padding: 20px;
     min-height: 100vh;
+}
+
+#intermediate-positions {
+    flex-direction: column;
 }
 
 .ui.container {
@@ -150,6 +154,7 @@ body {
     overflow: hidden;
     position: relative;
     backdrop-filter: blur(5px);
+    flex-shrink: 0;
 }
 
 .timeline-card::before {
@@ -159,12 +164,10 @@ body {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(0, 204, 255, 0.2),
-        transparent
-    );
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(0, 204, 255, 0.2),
+            transparent);
     transition: 0.5s;
 }
 
@@ -185,7 +188,7 @@ body {
     color: #ffffff !important;
     font-weight: bold !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5),
-                 0 0 10px rgba(0, 204, 255, 0.5) !important;
+        0 0 10px rgba(0, 204, 255, 0.5) !important;
 }
 
 .timeline-card .content .meta,
@@ -238,37 +241,89 @@ body {
     animation: incorrectCard 0.5s ease;
 }
 
+/* Game Area */
+.game-main {
+    overflow: visible;
+    width: 100%;
+}
+
 /* Timeline Area */
 .my-timeline {
     background: var(--timeline-bg);
     border-radius: 12px;
     padding: 20px;
     min-height: 200px;
-    display: flex;
-    flex-wrap: wrap;
+    display: inline-flex;
+    flex-wrap: nowrap;
     gap: 15px;
     margin-bottom: 30px;
     border: 2px solid var(--card-border);
     box-shadow: var(--neon-glow);
     position: relative;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-secondary) var(--bg-tertiary);
+    width: 100%;
+
+}
+
+.player-area {
+    width: 100%;
+    overflow: visible;
+}
+
+.my-timeline::-webkit-scrollbar {
+    height: 8px;
+}
+
+.my-timeline::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.my-timeline::-webkit-scrollbar-thumb {
+    background: var(--accent-secondary);
+    border-radius: 4px;
 }
 
 /* Card Grid */
 #card-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    display: inline-flex !important;
+    flex-wrap: nowrap;
     gap: 15px;
     padding: 20px;
     background: var(--bg-tertiary);
     border-radius: 12px;
     box-shadow: var(--neon-glow);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-secondary) var(--bg-tertiary);
+    width: 100%;
+}
+
+#card-grid::-webkit-scrollbar {
+    height: 8px;
+}
+
+#card-grid::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+#card-grid::-webkit-scrollbar-thumb {
+    background: var(--accent-secondary);
+    border-radius: 4px;
 }
 
 .card-slot {
     background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     border-radius: 12px;
     height: 100px;
+    min-width: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -277,6 +332,7 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: var(--neon-glow);
+    flex-shrink: 0;
 }
 
 .card-slot:not(.disabled):hover {
@@ -289,11 +345,37 @@ body {
     background: var(--bg-tertiary);
     border-radius: 12px;
     padding: 15px;
-    display: flex;
+    display: inline-flex;
+    flex-wrap: nowrap;
     gap: 15px;
     align-items: center;
     margin-top: 20px;
     box-shadow: var(--neon-glow);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-secondary) var(--bg-tertiary);
+    width: 100%;
+    min-width: max-content;
+}
+
+.controls::-webkit-scrollbar {
+    height: 8px;
+}
+
+.controls::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.controls::-webkit-scrollbar-thumb {
+    background: var(--accent-secondary);
+    border-radius: 4px;
+}
+
+.controls .ui.button {
+    flex: 0 0 auto;
 }
 
 .ui.button {
@@ -320,28 +402,63 @@ body {
 
 /* Animations */
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 @keyframes correctCard {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 @keyframes incorrectCard {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
-    100% { transform: translateX(0); }
+    0% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
 }
 
 @keyframes floatingCards {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0); }
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
 }
 
 /* Player List */
@@ -368,7 +485,8 @@ body {
     text-shadow: var(--neon-glow);
 }
 
-.ui.form input, .ui.form select {
+.ui.form input,
+.ui.form select {
     background: var(--input-bg) !important;
     border: 1px solid var(--input-border) !important;
     color: var(--text-primary) !important;
@@ -376,7 +494,8 @@ body {
     box-shadow: var(--neon-glow);
 }
 
-.ui.form input:focus, .ui.form select:focus {
+.ui.form input:focus,
+.ui.form select:focus {
     border-color: var(--accent-primary) !important;
     box-shadow: var(--neon-green-glow);
 }
@@ -398,16 +517,12 @@ body {
     .timeline-card {
         width: 140px !important;
     }
-    
-    #card-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+
+    .card-slot {
+        min-width: 120px;
     }
-    
-    .controls {
-        flex-direction: column;
-    }
-    
+
     .ui.button {
-        width: 100%;
+        flex-shrink: 0;
     }
 }
